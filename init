@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+
+/**
+ * SACRED Init Command
+ * 
+ * Usage: ./init
+ * 
+ * This is the main entry point for initializing the SACRED development environment.
+ * It runs the comprehensive initialization script that sets up all development tools,
+ * documentation, and environment configuration based on the Product Design Document.
+ */
+
+const path = require('path');
+
+// Import the main initializer
+const SacredInitializer = require('./scripts/init.js');
+
+// ASCII Art Banner
+const banner = `
+ ██████╗  █████╗  ██████╗██████╗ ███████╗██████╗ 
+██╔════╝ ██╔══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗
+██║  ███╗███████║██║     ██████╔╝█████╗  ██║  ██║
+██║   ██║██╔══██║██║     ██╔══██╗██╔══╝  ██║  ██║
+╚██████╔╝██║  ██║╚██████╗██║  ██║███████╗██████╔╝
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ 
+
+Sexual Intimacy Assessment for Christian Couples
+Development Environment Initializer v1.0
+
+`;
+
+console.log('\x1b[36m%s\x1b[0m', banner);
+
+// Check if we're in the right directory
+const packageJsonPath = path.join(process.cwd(), 'package.json');
+const fs = require('fs');
+
+if (!fs.existsSync(packageJsonPath)) {
+    console.error('\x1b[31m❌ Error: package.json not found. Please run this command from the project root.\x1b[0m');
+    process.exit(1);
+}
+
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+if (packageJson.name !== 'base44-app') {
+    console.error('\x1b[33m⚠️  Warning: This doesn\'t appear to be the SACRED project root.\x1b[0m');
+    console.log('\x1b[36mContinuing anyway...\x1b[0m\n');
+}
+
+// Run the initializer
+const initializer = new SacredInitializer();
+initializer.init();
