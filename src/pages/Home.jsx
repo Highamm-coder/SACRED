@@ -9,6 +9,13 @@ export default function HomePage() {
   useEffect(() => {
     const checkAndRedirect = async () => {
       try {
+        // Check if environment variables are set
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          console.warn('Supabase environment variables not set, redirecting to landing page');
+          navigate(createPageUrl('Landing'));
+          return;
+        }
+
         const user = await User.me();
         // User is logged in, check payment status
         if (user.has_paid) {
