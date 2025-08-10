@@ -265,8 +265,8 @@ CREATE TRIGGER update_page_content_updated_at BEFORE UPDATE ON page_content
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert sample data for testing
-INSERT INTO blog_posts (title, slug, excerpt, content, status, published_at) VALUES 
-('Welcome to SACRED', 'welcome-to-sacred', 'An introduction to our platform', '<h2>Welcome to SACRED</h2><p>This is our first blog post...</p>', 'published', NOW());
+INSERT INTO blog_posts (title, slug, excerpt, content, featured_image, status, published_at) VALUES 
+('Welcome to SACRED', 'welcome-to-sacred', 'An introduction to our platform', '<h2>Welcome to SACRED</h2><p>This is our first blog post about preparing for the sacred nature of marital intimacy. SACRED helps Christian couples have the conversations no one taught them to have.</p>', 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80', 'published', NOW());
 
 INSERT INTO education_resources (title, slug, description, content, resource_type, status, published_at) VALUES 
 ('Understanding Intimacy in Marriage', 'understanding-intimacy-marriage', 'A foundational guide to marital intimacy', '<h2>Understanding Intimacy</h2><p>Content here...</p>', 'article', 'published', NOW());

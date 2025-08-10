@@ -11,7 +11,7 @@ const resend = new Resend(resendApiKey);
 // Email templates and content
 const emailTemplates = {
   partnerInvite: (data) => ({
-    from: 'SACRED <noreply@sacred.co>',
+    from: 'SACRED <noreply@sacredonline.co>',
     to: [data.email],
     subject: `${data.partnerName} has invited you to take the SACRED assessment`,
     html: `
@@ -56,7 +56,7 @@ const emailTemplates = {
           <div style="border-top: 1px solid #E6D7C9; padding-top: 20px; margin-top: 30px; text-align: center;">
             <p style="color: #6B5B73; font-size: 12px; margin: 0;">
               If you have any questions, please contact us at 
-              <a href="mailto:support@sacred.co" style="color: #C4756B;">support@sacred.co</a>
+              <a href="mailto:support@sacredonline.co" style="color: #C4756B;">support@sacredonline.co</a>
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@ const emailTemplates = {
   }),
 
   assessmentComplete: (data) => ({
-    from: 'SACRED <noreply@sacred.co>',
+    from: 'SACRED <noreply@sacredonline.co>',
     to: [data.email],
     subject: 'Your SACRED Assessment is Complete!',
     html: `
@@ -116,7 +116,7 @@ const emailTemplates = {
   }),
 
   weddingCongratulations: (data) => ({
-    from: 'SACRED <noreply@sacred.co>',
+    from: 'SACRED <noreply@sacredonline.co>',
     to: [data.email],
     subject: 'Congratulations on Your Wedding! 💒',
     html: `

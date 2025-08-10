@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BlogPost } from '@/api/entities';
-import ReactMarkdown from 'react-markdown';
+// Removed ReactMarkdown - content is stored as HTML, not Markdown
 import { format } from 'date-fns';
 import { Loader2, Calendar, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ export default function BlogPostPage() {
 
         const posts = await BlogPost.filter({ slug: slug });
         if (posts.length > 0) {
+          console.log('📝 Blog post loaded:', posts[0]);
           setPost(posts[0]);
         } else {
           setError('Blog post not found.');
@@ -70,32 +71,34 @@ export default function BlogPostPage() {
 
   return (
     <div className="bg-[#F5F1EB] py-12">
-       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-        .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
-        .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
-        .prose-sacred h1, .prose-sacred h2, .prose-sacred h3 {
-          font-family: 'Cormorant Garamond', serif;
-          font-weight: 400;
-          color: #2F4F3F;
-        }
-        .prose-sacred p, .prose-sacred li {
-          font-family: 'Cormorant Garamond', serif;
-          font-weight: 300;
-          font-size: 1.125rem;
-          line-height: 1.8;
-          color: #6B5B73;
-        }
-        .prose-sacred a {
-          color: #C4756B;
-          text-decoration: underline;
-        }
-        .prose-sacred blockquote {
-          border-left-color: #C4756B;
-          font-style: italic;
-          color: #6B5B73;
-        }
-      `}</style>
+       <style dangerouslySetInnerHTML={{
+        __html: `
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+          .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
+          .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
+          .prose-sacred h1, .prose-sacred h2, .prose-sacred h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 400;
+            color: #2F4F3F;
+          }
+          .prose-sacred p, .prose-sacred li {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 1.125rem;
+            line-height: 1.8;
+            color: #6B5B73;
+          }
+          .prose-sacred a {
+            color: #C4756B;
+            text-decoration: underline;
+          }
+          .prose-sacred blockquote {
+            border-left-color: #C4756B;
+            font-style: italic;
+            color: #6B5B73;
+          }
+        `
+      }} />
       
       <div className="max-w-4xl mx-auto px-6 mb-8">
         <Link to={createPageUrl('Education')}>
@@ -117,11 +120,14 @@ export default function BlogPostPage() {
           <div className="flex justify-center items-center gap-6 text-[#6B5B73] font-sacred">
             <div className="flex items-center gap-2">
               <UserIcon className="w-4 h-4" />
-              <span>{post.author}</span>
+              <span>{post.author || post.author_name || 'SACRED Team'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <span>{format(new Date(post.created_date), 'MMMM d, yyyy')}</span>
+              <span>{post.created_at && !isNaN(new Date(post.created_at)) 
+                ? format(new Date(post.created_at), 'MMMM d, yyyy')
+                : 'Date unavailable'
+              }</span>
             </div>
           </div>
         </header>
@@ -132,11 +138,10 @@ export default function BlogPostPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E6D7C9] p-8 md:p-12">
-            <ReactMarkdown className="prose-sacred max-w-none">
-                {post.content}
-            </ReactMarkdown>
-        </div>
+        <div 
+            className="bg-white rounded-2xl shadow-sm border border-[#E6D7C9] p-8 md:p-12 prose-sacred max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+        />
       </article>
     </div>
   );

@@ -130,7 +130,7 @@ export default function OnboardingPage() {
             const currentLastName = user.full_name ? user.full_name.split(' ').slice(1).join(' ') : '';
             updateData.full_name = formData.userName + (currentLastName ? ' ' + currentLastName : '');
         }
-        await User.updateMyUserData(updateData);
+        await User.update(user.id, updateData);
         
         await CoupleAssessment.update(assessment.id, {
             partner2_has_accessed: true,
@@ -149,7 +149,13 @@ export default function OnboardingPage() {
         return;
       }
       try {
-        await User.updateMyUserData({ onboarding_completed: true, full_name: formData.userName });
+        console.log('🔄 Starting Partner 1 onboarding completion...');
+        console.log('📝 Form data:', formData);
+        console.log('👤 User:', user);
+        
+        await User.update(user.id, { onboarding_completed: true, full_name: formData.userName });
+        console.log('✅ User profile updated');
+        
         const assessmentData = {
           partner1_name: formData.userName || 'You',
           partner1_email: user.email,
@@ -158,10 +164,14 @@ export default function OnboardingPage() {
           wedding_date: formData.weddingDate,
           status: 'pending'
         };
+        console.log('📊 Creating assessment with data:', assessmentData);
+        
         const newAssessment = await CoupleAssessment.create(assessmentData);
+        console.log('✅ Assessment created successfully:', newAssessment);
         
         const inviteLink = `${window.location.origin}${createPageUrl(`Assessment?id=${newAssessment.id}&partner=2`)}`;
-        await sendInviteEmail({
+        console.log('📧 Sending invite email...');
+        const emailResult = await sendInviteEmail({
           partnerEmail: formData.partnerEmail,
           partnerName: formData.partnerName,
           senderName: formData.userName || 'Your partner',
@@ -169,7 +179,9 @@ export default function OnboardingPage() {
           inviteLink: inviteLink,
           customMessage: formData.customMessage || ''
         });
+        console.log('📧 Email result:', emailResult);
 
+        console.log('🏠 Navigating to dashboard with assessment ID:', newAssessment.id);
         navigate(createPageUrl(`Dashboard?created=${newAssessment.id}`));
       } catch (error) {
         console.error('Error in onboarding completion:', error);
@@ -214,11 +226,13 @@ export default function OnboardingPage() {
   return (
     <AuthWrapper requireAuth={true}>
       <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#EAE6E1] p-6">
-        <style jsx>{`
-          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-          .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
-          .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
-        `}</style>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+            .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
+            .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
+          `
+        }} />
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">

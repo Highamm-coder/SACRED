@@ -6,6 +6,10 @@ import { Info } from 'lucide-react';
 
 export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
   if (!question) return null;
+  
+  // Debug logging for question structure
+  console.log('🧐 QuestionCard received question:', question);
+  console.log('🧐 Question options type:', typeof question.options, 'Value:', question.options);
 
   return (
     <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
@@ -40,10 +44,13 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
       
       <CardContent>
         <div className="space-y-3">
-          {question.options.map((option, index) => (
+          {question.options && Array.isArray(question.options) ? question.options.map((option, index) => (
             <Button
               key={index}
-              onClick={() => onAnswer(option)}
+              onClick={() => {
+                console.log('🖱️ Option clicked:', option, 'for question:', question.questionId || question.question_id);
+                onAnswer(option);
+              }}
               variant="outline"
               className={`w-full text-left justify-start p-4 h-auto font-sacred text-base leading-relaxed transition-all duration-200 ${
                 selectedAnswer === option
@@ -53,7 +60,13 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
             >
               {option}
             </Button>
-          ))}
+          )) : (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 font-sacred">
+                Error loading question options. Please refresh the page.
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

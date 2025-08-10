@@ -3,13 +3,18 @@ import { supabase, handleSupabaseError } from '../supabaseClient';
 export const CoupleAssessment = {
   // Create a new couple assessment
   async create(assessmentData) {
+    console.log('🗃️ CoupleAssessment.create() called with:', assessmentData);
+    
     const { data, error } = await supabase
       .from('couple_assessments')
       .insert(assessmentData)
       .select()
       .single();
     
+    console.log('🗃️ Supabase response:', { data, error });
+    
     handleSupabaseError(error);
+    console.log('🗃️ Returning assessment data:', data);
     return data;
   },
 

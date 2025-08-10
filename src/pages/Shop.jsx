@@ -37,7 +37,7 @@ export default function ShopPage() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const fetchedProducts = await Product.filter({ published: true }, 'order');
+        const fetchedProducts = await Product.list();
         setProducts(fetchedProducts);
         
         const uniqueCategories = ['All', ...new Set(fetchedProducts.map(p => p.category))];
@@ -60,12 +60,14 @@ export default function ShopPage() {
 
   return (
     <div className="bg-[#F5F1EB] min-h-screen">
-      <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-        .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
-        .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
-        .font-sacred-medium { font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 0.08em; }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+          .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.08em; }
+          .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: 0.08em; }
+          .font-sacred-medium { font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 0.08em; }
+        `
+      }} />
       
       <div className="max-w-7xl mx-auto py-12 px-6">
         {/* Header */}

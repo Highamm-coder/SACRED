@@ -13,15 +13,22 @@ export const sendInviteEmail = async (inviteData) => {
   try {
     console.log('Sending invite email via Resend:', inviteData);
     
-    // Validate required data
-    if (!inviteData.email || !inviteData.partnerName || !inviteData.inviteLink) {
+    // Validate required data (handle both email and partnerEmail field names)
+    const email = inviteData.email || inviteData.partnerEmail;
+    if (!email || !inviteData.partnerName || !inviteData.inviteLink) {
       return { 
         success: false, 
-        error: 'Missing required data: email, partnerName, and inviteLink are required' 
+        error: 'Missing required data: email/partnerEmail, partnerName, and inviteLink are required' 
       };
     }
     
-    const result = await sendPartnerInviteEmail(inviteData);
+    // Normalize the data structure for the email service
+    const normalizedData = {
+      ...inviteData,
+      email: email // Ensure email field exists
+    };
+    
+    const result = await sendPartnerInviteEmail(normalizedData);
     
     if (result.success) {
       console.log('Invite email sent successfully:', result.emailId);

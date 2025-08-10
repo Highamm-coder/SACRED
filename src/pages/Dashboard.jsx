@@ -144,10 +144,17 @@ export default function DashboardPage() {
   };
 
   const getPartnerName = (assessment) => {
+    console.log('🤝 getPartnerName() - User:', user?.email, 'Partner1:', assessment.partner1_email, 'Partner2:', assessment.partner2_email);
+    
     if (user && user.email === assessment.partner1_email) {
+      // Current user is Partner 1, so their partner is Partner 2
+      console.log('👤 User is Partner 1, returning Partner 2 name:', assessment.partner2_name);
       return assessment.partner2_name || 'Your Partner';
+    } else {
+      // Current user is Partner 2, so their partner is Partner 1  
+      console.log('👤 User is Partner 2, returning Partner 1 name:', assessment.partner1_name);
+      return assessment.partner1_name || 'Your Partner';
     }
-    return assessment.partner1_name;
   };
   
   const getActions = (assessment) => {
@@ -365,10 +372,9 @@ export default function DashboardPage() {
                             <p className="font-medium text-amber-800 font-sacred">In Progress</p>
                           </div>
                           <p className="text-sm text-amber-700 font-sacred">
-                            {assessment.status === 'partner1_completed' && user && user.email === assessment.partner1_email
+                            {(assessment.status === 'partner1_completed' && user && user.email === assessment.partner1_email) ||
+                             (assessment.status === 'partner2_completed' && user && user.email === assessment.partner2_email)
                               ? `Waiting for ${getPartnerName(assessment)} to complete their assessment.`
-                              : assessment.status === 'partner2_completed' && user && user.email === assessment.partner2_email
-                              ? `Waiting for ${assessment.partner1_name} to complete their assessment.`
                               : 'Continue where you left off to complete your part of the assessment.'
                             }
                           </p>

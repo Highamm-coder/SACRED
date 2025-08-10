@@ -10,15 +10,22 @@ export { OpenEndedQuestion, OpenEndedAnswer } from './services/openEnded';
 // User authentication and management
 export { User } from './services/users';
 
-// Content entities (for future use)
+// Content entities using CMS services
+import { 
+  blogPostService, 
+  educationResourceService, 
+  productRecommendationService 
+} from './services/cms';
+
 export const BlogPost = {
   async list() {
-    // TODO: Implement blog post functionality
-    return [];
+    return await blogPostService.listPublished();
   },
   async get(id) {
-    // TODO: Implement blog post functionality
-    return null;
+    return await blogPostService.get(id);
+  },
+  async filter(filters = {}) {
+    return await blogPostService.list(filters);
   }
 };
 
@@ -35,23 +42,22 @@ export const RecommendedVideo = {
 
 export const Resource = {
   async list() {
-    // TODO: Implement resource functionality
-    return [];
+    return await educationResourceService.listPublished();
   },
   async get(id) {
-    // TODO: Implement resource functionality
-    return null;
+    return await educationResourceService.get(id);
   }
 };
 
 export const Product = {
   async list() {
-    // TODO: Implement product functionality
-    return [];
+    return await productRecommendationService.listActive();
   },
   async get(id) {
-    // TODO: Implement product functionality
-    return null;
+    return await productRecommendationService.get(id);
+  },
+  async filter(filters = {}) {
+    return await productRecommendationService.list(filters);
   }
 };
 

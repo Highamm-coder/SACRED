@@ -49,12 +49,17 @@ export default function AssessmentPage() {
                 
                 setAssessment(fetchedAssessment);
                 // Sort questions by order field (questions service now provides consistent ordering)
+                console.log('📊 Questions loaded:', allQuestions.length, 'questions');
+                console.log('📊 Sample question:', allQuestions[0]);
                 setQuestions(allQuestions);
                 
+                console.log('✅ User answers loaded:', userAnswers);
                 const answersMap = userAnswers.reduce((acc, ans) => {
+                    console.log('📝 Processing answer for question:', ans.question_id, 'Answer:', ans.answer);
                     acc[ans.question_id] = ans.answer; // Use the string `question_id` as the key
                     return acc;
                 }, {});
+                console.log('📝 Final answers map:', answersMap);
                 setAnswers(answersMap);
 
             } catch (error) {
@@ -69,9 +74,14 @@ export default function AssessmentPage() {
     }, [assessmentId, partnerNumber, navigate]);
 
     const handleAnswerSelect = async (questionId, answer) => {
+        console.log('🎯 Answer selected for question:', questionId, 'Answer:', answer);
         const newAnswers = { ...answers, [questionId]: answer };
+        console.log('🎯 Updated answers state:', newAnswers);
+        
+        // Update state immediately for UI responsiveness
         setAnswers(newAnswers);
         
+        // Save to database in background
         setIsSaving(true);
         try {
             // Find the question by its string ID now
@@ -154,6 +164,10 @@ export default function AssessmentPage() {
     }
     
     const currentQuestion = questions[currentQuestionIndex];
+    console.log('🔄 Rendering Assessment - Current Question Index:', currentQuestionIndex);
+    console.log('🔄 Current Question:', currentQuestion);
+    console.log('🔄 Current Answer:', currentQuestion ? answers[currentQuestion.questionId] : 'No question');
+    console.log('🔄 All Answers:', answers);
 
     return (
         <AuthWrapper requireAuth={true}>
@@ -171,7 +185,10 @@ export default function AssessmentPage() {
                             <QuestionCard 
                                 question={currentQuestion}
                                 selectedAnswer={answers[currentQuestion.questionId]}
-                                onAnswer={(answer) => handleAnswerSelect(currentQuestion.questionId, answer)}
+                                onAnswer={(answer) => {
+                                    console.log('🔗 QuestionCard callback triggered with answer:', answer);
+                                    handleAnswerSelect(currentQuestion.questionId, answer);
+                                }}
                             />
                         )}
                     </div>
@@ -182,14 +199,35 @@ export default function AssessmentPage() {
                         </button>
                         
                         {currentQuestionIndex < questions.length - 1 ? (
-                            <button onClick={handleNext} disabled={!answers[currentQuestion?.questionId] || isSaving} className="bg-[#C4756B] hover:bg-[#B86761] text-white px-6 py-2 rounded-lg font-sacred flex items-center gap-2">
+                            <button 
+                                onClick={() => {
+                                    console.log('▶️ Next button clicked');
+                                    handleNext();
+                                }} 
+                                disabled={!answers[currentQuestion?.questionId] || isSaving} 
+                                className="bg-[#C4756B] hover:bg-[#B86761] text-white px-6 py-2 rounded-lg font-sacred flex items-center gap-2"
+                            >
                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Next'} <ArrowRight className="w-4 h-4" />
                             </button>
                         ) : (
-                            <button onClick={finishAssessment} disabled={!answers[currentQuestion?.questionId] || isSaving} className="bg-[#2F4F3F] hover:bg-[#1F3F2F] text-white px-6 py-2 rounded-lg font-sacred flex items-center gap-2">
+                            <button 
+                                onClick={() => {
+                                    console.log('🏁 Finish button clicked');
+                                    finishAssessment();
+                                }} 
+                                disabled={!answers[currentQuestion?.questionId] || isSaving} 
+                                className="bg-[#2F4F3F] hover:bg-[#1F3F2F] text-white px-6 py-2 rounded-lg font-sacred flex items-center gap-2"
+                            >
                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Finish Assessment'} <Save className="w-4 h-4" />
                             </button>
                         )}
+                        {/* Debug info moved to console logs */}
+                        {currentQuestion && console.log('🔧 Navigation Debug:', {
+                            questionId: currentQuestion.questionId,
+                            answer: answers[currentQuestion.questionId],
+                            disabled: !answers[currentQuestion.questionId] || isSaving,
+                            isSaving: isSaving
+                        })}
                     </div>
                 </div>
             </div>
