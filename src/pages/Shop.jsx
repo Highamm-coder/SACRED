@@ -12,6 +12,8 @@ const ProductCard = ({ product }) => (
           src={product.imageUrl} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          decoding="async"
         />
       </div>
       <div className="p-4 sm:p-5 flex flex-col flex-grow">

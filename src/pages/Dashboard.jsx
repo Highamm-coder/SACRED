@@ -27,6 +27,41 @@ export default function DashboardPage() {
         const currentUser = await User.me();
         setUser(currentUser);
         
+        // Check for specific error messages from URL parameters
+        const urlParams = new URLSearchParams(location.search);
+        const errorParam = urlParams.get('error');
+        
+        if (errorParam) {
+          switch (errorParam) {
+            case 'assessment_not_found':
+              setLoadingError('The assessment you\'re trying to access could not be found. It may have been deleted or the link may be incorrect.');
+              break;
+            case 'assessment_unauthorized':
+              setLoadingError('You are not authorized to access this assessment. Please make sure you\'re logged in with the correct email address.');
+              break;
+            case 'assessment_permission_denied':
+              setLoadingError('Permission denied. This assessment belongs to another couple.');
+              break;
+            case 'invite_mismatch':
+              setLoadingError('This invite link was sent to a different email address. Please log in with the correct account or contact your partner.');
+              break;
+            case 'assessment_load_failed':
+              setLoadingError('Failed to load the assessment. This might be a temporary issue - please try again.');
+              break;
+            case 'onboarding_failed':
+              setLoadingError('There was an error during the onboarding process. Please try again.');
+              break;
+            default:
+              setLoadingError(`An error occurred: ${errorParam.replace(/_/g, ' ')}`);
+          }
+          
+          // Clear error from URL
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.delete('error');
+          window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
+          return;
+        }
+        
         // Paywall check
         if (!currentUser.has_paid) {
             navigate(createPageUrl('PaymentRequired'));
@@ -41,7 +76,6 @@ export default function DashboardPage() {
 
         // Try multiple approaches to find the user's assessment
         let foundAssessment = null;
-        const urlParams = new URLSearchParams(location.search);
         const createdAssessmentId = urlParams.get('created');
 
         console.log('Searching for assessments for user:', currentUser.email);

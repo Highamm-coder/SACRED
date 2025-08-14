@@ -152,6 +152,8 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="your.email@gmail.com"
+                  inputMode="email"
+                  autoComplete="email"
                   className="border-[#E6D7C9]/50 focus:border-[#C4756B] font-sacred"
                 />
               </div>
@@ -168,6 +170,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder={isLogin ? "Enter your password" : "Create a secure password"}
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                     className="border-[#E6D7C9]/50 focus:border-[#C4756B] font-sacred pr-10"
                   />
                   <button

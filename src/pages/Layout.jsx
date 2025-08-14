@@ -12,11 +12,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, User as UserIcon, LogOut, Shield } from 'lucide-react';
+import { ChevronDown, User as UserIcon, LogOut, Shield, Menu, X } from 'lucide-react';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -169,12 +170,126 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             </div>
 
-            {/* Right: Auth */}
-            <div className="flex items-center">
-              {renderUserMenu()}
+            {/* Right: Auth & Mobile Menu */}
+            <div className="flex items-center gap-2">
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2"
+                  aria-label="Toggle menu"
+                >
+                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </Button>
+              </div>
+              
+              {/* Desktop user menu */}
+              <div className="hidden md:block">
+                {renderUserMenu()}
+              </div>
             </div>
           </nav>
         </header>
+      )}
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && currentPageName !== 'Landing' && (
+        <div className="fixed inset-0 z-50 bg-white md:hidden">
+          <div className="flex justify-between items-center p-4 border-b border-[#E6D7C9]">
+            <span className="text-xl font-sacred-bold text-[#2F4F3F]">SACRED</span>
+            <Button 
+              variant="ghost" 
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2"
+              aria-label="Close menu"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          
+          <nav className="p-4 space-y-6">
+            {user && user.has_paid && (
+              <Link
+                to={createPageUrl("Dashboard")}
+                className="block text-lg font-sacred-bold text-[#6B5B73] hover:text-[#2F4F3F] transition-colors py-3 border-b border-[#E6D7C9]"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Assessments
+              </Link>
+            )}
+            
+            <Link
+              to={createPageUrl("Education")}
+              className="block text-lg font-sacred-bold text-[#6B5B73] hover:text-[#2F4F3F] transition-colors py-3 border-b border-[#E6D7C9]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Education
+            </Link>
+            
+            <Link
+              to={createPageUrl("Shop")}
+              className="block text-lg font-sacred-bold text-[#6B5B73] hover:text-[#2F4F3F] transition-colors py-3 border-b border-[#E6D7C9]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Shop
+            </Link>
+
+            {/* Mobile User Menu */}
+            <div className="pt-4 space-y-4">
+              {user ? (
+                <>
+                  <div className="px-3 py-2 border border-[#E6D7C9] rounded-md">
+                    <p className="font-sacred text-sm text-[#6B5B73]">Signed in as</p>
+                    <p className="font-sacred-bold text-[#2F4F3F]">{user.full_name || user.email}</p>
+                  </div>
+                  
+                  <Link
+                    to={createPageUrl("Account")}
+                    className="flex items-center gap-2 text-lg font-sacred-bold text-[#6B5B73] hover:text-[#2F4F3F] transition-colors py-3"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <UserIcon className="w-5 h-5" />
+                    Account
+                  </Link>
+                  
+                  {user.role === 'admin' && (
+                    <Link
+                      to={createPageUrl("Admin")}
+                      className="flex items-center gap-2 text-lg font-sacred-bold text-[#6B5B73] hover:text-[#2F4F3F] transition-colors py-3"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Shield className="w-5 h-5" />
+                      Admin
+                    </Link>
+                  )}
+                  
+                  <Button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    variant="outline"
+                    className="w-full justify-start gap-2 font-sacred-bold"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <Link
+                  to={createPageUrl("Login")}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button className="w-full bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </nav>
+        </div>
       )}
 
       <main className="flex-1">

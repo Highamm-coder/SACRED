@@ -21,4 +21,25 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-checkbox',
+            'lucide-react'
+          ],
+          auth: ['@supabase/supabase-js'],
+          utils: ['date-fns', 'framer-motion'],
+          markdown: ['react-markdown']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 500,
+    sourcemap: false
+  }
 }) 

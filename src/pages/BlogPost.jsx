@@ -134,7 +134,7 @@ export default function BlogPostPage() {
 
         {post.featured_image && (
           <div className="mb-8 rounded-2xl overflow-hidden shadow-lg aspect-video">
-            <img src={post.featured_image} alt={post.title} className="w-full h-full object-cover" />
+            <img src={post.featured_image} alt={post.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
         )}
 

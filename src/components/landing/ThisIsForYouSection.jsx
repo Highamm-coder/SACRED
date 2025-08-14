@@ -37,7 +37,19 @@ export default function ThisIsForYouSection({ handleGetStarted }) {
           </div>
         </div>
         <div className="order-1 md:order-2">
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/c994f4bda_Screenshot2025-07-20at101100PM.png?quality=80&width=800" alt="Couple in a loving embrace" className="rounded-2xl md:rounded-3xl soft-shadow w-full h-full object-cover" />
+            <picture>
+              <source
+                media="(max-width: 640px)"
+                srcSet="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/c994f4bda_Screenshot2025-07-20at101100PM.png?quality=75&width=640"
+              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/c994f4bda_Screenshot2025-07-20at101100PM.png?quality=80&width=800"
+                alt="Couple in a loving embrace"
+                className="rounded-2xl md:rounded-3xl soft-shadow w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
         </div>
       </div>
     </section>

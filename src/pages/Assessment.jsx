@@ -47,6 +47,27 @@ export default function AssessmentPage() {
                     Answer.filter({ assessmentId, userEmail: currentUser.email })
                 ]);
                 
+                // Validate that the current user is one of the partners in this assessment
+                const userEmail = currentUser.email.toLowerCase();
+                const partner1Email = fetchedAssessment.partner1_email?.toLowerCase();
+                const partner2Email = fetchedAssessment.partner2_email?.toLowerCase();
+                
+                if (userEmail !== partner1Email && userEmail !== partner2Email) {
+                    console.error('Authorization failed: User is not a partner in this assessment', {
+                        userEmail,
+                        partner1Email,
+                        partner2Email
+                    });
+                    navigate(createPageUrl('Dashboard?error=assessment_unauthorized'));
+                    return;
+                }
+                
+                console.log('✅ User authorized for assessment:', {
+                    userEmail,
+                    isPartner1: userEmail === partner1Email,
+                    isPartner2: userEmail === partner2Email
+                });
+                
                 setAssessment(fetchedAssessment);
                 // Sort questions by order field (questions service now provides consistent ordering)
                 console.log('📊 Questions loaded:', allQuestions.length, 'questions');
@@ -64,7 +85,15 @@ export default function AssessmentPage() {
 
             } catch (error) {
                 console.error("Error initializing assessment:", error);
-                navigate(createPageUrl('Dashboard?error=assessment_load_failed'));
+                
+                // Provide more specific error messages
+                if (error.message?.includes('not found') || error.status === 404) {
+                    navigate(createPageUrl('Dashboard?error=assessment_not_found'));
+                } else if (error.message?.includes('permission') || error.status === 403) {
+                    navigate(createPageUrl('Dashboard?error=assessment_permission_denied'));
+                } else {
+                    navigate(createPageUrl('Dashboard?error=assessment_load_failed'));
+                }
             } finally {
                 setIsLoading(false);
             }

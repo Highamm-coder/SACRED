@@ -18,10 +18,23 @@ export default function HeroSection({ handleGetStarted }) {
         </div>
       </div>
       <div className="flex-1 px-4 pb-4 md:px-6 md:pb-6">
-        <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg?quality=80&width=1600"
-          alt="Couple holding hands across a table"
-          className="rounded-2xl md:rounded-3xl soft-shadow w-full h-full object-cover" />
+        <picture>
+          <source
+            media="(max-width: 640px)"
+            srcSet="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg?quality=75&width=640"
+          />
+          <source
+            media="(max-width: 1024px)"
+            srcSet="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg?quality=80&width=1024"
+          />
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg?quality=80&width=1600"
+            alt="Couple holding hands across a table"
+            className="rounded-2xl md:rounded-3xl soft-shadow w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
       </div>
     </section>
   );

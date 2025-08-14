@@ -53,7 +53,7 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
                   onAnswer(option);
                 }}
                 variant="outline"
-                className={`w-full text-left justify-start p-4 h-auto font-sacred text-base leading-relaxed transition-all duration-200 ${
+                className={`w-full text-left justify-start p-4 min-h-[44px] h-auto font-sacred text-base leading-relaxed transition-all duration-200 touch-manipulation ${
                   selectedAnswer === option
                     ? 'bg-[#7A9B8A] text-white border-[#7A9B8A] hover:bg-[#6B8B7A] hover:border-[#6B8B7A] shadow-md'
                     : 'bg-white border-[#E6D7C9] text-[#2F4F3F] hover:bg-[#F5F1EB] hover:border-[#C4756B]'
