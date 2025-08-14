@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/api/entities';
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, getSiteUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Star, ArrowLeft } from 'lucide-react';
 import { createStripeCheckoutSession } from '@/api/functions';
@@ -32,7 +32,7 @@ export default function PaymentRequiredPage() {
     setIsProcessing(true);
     setError(null);
     try {
-      const { data } = await createStripeCheckoutSession({ appUrl: window.location.origin });
+      const { data } = await createStripeCheckoutSession({ appUrl: getSiteUrl() });
       if (data && data.url) {
         window.location.href = data.url;
       } else {

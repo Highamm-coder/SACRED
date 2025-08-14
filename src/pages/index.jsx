@@ -54,6 +54,8 @@ import EmailTest from "./EmailTest";
 
 import AdminCMS from "./AdminCMS";
 
+import PartnerInvite from "./PartnerInvite";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -111,6 +113,8 @@ const PAGES = {
     EmailTest: EmailTest,
     
     AdminCMS: AdminCMS,
+    
+    PartnerInvite: PartnerInvite,
     
 }
 
@@ -192,6 +196,8 @@ function PagesContent() {
                 <Route path="/EmailTest" element={<EmailTest />} />
                 
                 <Route path="/AdminCMS" element={<AdminCMS />} />
+                
+                <Route path="/PartnerInvite" element={<PartnerInvite />} />
                 
             </Routes>
         </Layout>

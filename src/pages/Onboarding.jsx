@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, CoupleAssessment } from '@/api/entities';
+import { User, CoupleAssessment, PartnerInvite } from '@/api/entities';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, getSiteUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -170,7 +170,7 @@ export default function OnboardingPage() {
           }
         }
 
-        navigate(createPageUrl(`Assessment?id=${assessment.id}&partner=2`));
+        navigate(createPageUrl('Dashboard'));
       } catch (error) {
         console.error("Error completing Partner 2 onboarding:", error);
         setIsLoading(false);
@@ -202,7 +202,8 @@ export default function OnboardingPage() {
         const newAssessment = await CoupleAssessment.create(assessmentData);
         console.log('✅ Assessment created successfully:', newAssessment);
         
-        const inviteLink = `${window.location.origin}${createPageUrl(`Assessment?id=${newAssessment.id}&partner=2`)}`;
+        // Create secure invite token for Partner 2
+        const inviteLink = await PartnerInvite.createInviteLink(newAssessment.id, user.email);
         console.log('📧 Sending invite email...');
         const emailResult = await sendInviteEmail({
           partnerEmail: formData.partnerEmail,

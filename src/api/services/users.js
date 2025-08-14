@@ -1,4 +1,5 @@
-import { supabase, handleSupabaseError, getCurrentUser, getUserProfile } from '../supabaseClient';
+import { supabase, handleSupabaseError, getCurrentUser, getUserProfile, ensureUserProfile } from '../supabaseClient';
+import { getSiteUrl } from '../../utils/index';
 
 export const User = {
   // Get current authenticated user with profile
@@ -8,7 +9,8 @@ export const User = {
       throw new Error('Not authenticated');
     }
     
-    const profile = await getUserProfile(user.id);
+    // Ensure profile exists, create if missing
+    const profile = await ensureUserProfile(user);
     
     // Combine auth user with profile data for compatibility
     return {
@@ -18,6 +20,7 @@ export const User = {
       avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
       has_paid: profile?.has_paid || false,
       onboarding_completed: profile?.onboarding_completed || false,
+      role: profile?.role || 'user',
       created_at: user.created_at,
       updated_at: profile?.updated_at || user.updated_at
     };
@@ -43,7 +46,8 @@ export const User = {
       email,
       password,
       options: {
-        data: userData
+        data: userData,
+        emailRedirectTo: getSiteUrl()
       }
     });
     

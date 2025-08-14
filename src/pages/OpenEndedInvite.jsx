@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CoupleAssessment, User } from '@/api/entities';
-import { createPageUrl } from '@/utils';
+import { PartnerInvite } from '@/api/services/partnerInvite';
+import { createPageUrl, getSiteUrl } from '@/utils';
 import { Copy, Check, Mail, ArrowRight, Loader2, BookOpen, Users } from 'lucide-react';
 
 export default function OpenEndedInvitePage() {
@@ -22,14 +23,27 @@ export default function OpenEndedInvitePage() {
       navigate(createPageUrl('Home'));
       return;
     }
-    const link = `${window.location.origin}${createPageUrl(`OpenEndedAssessment?id=${assessmentId}&partner=2`)}`;
-    setInviteLink(link);
     
-    const loadAssessment = async () => {
-        const data = await CoupleAssessment.get(assessmentId);
-        setAssessment(data);
+    const loadAssessmentAndCreateInvite = async () => {
+      try {
+        const assessmentData = await CoupleAssessment.get(assessmentId);
+        setAssessment(assessmentData);
+        
+        // Get current user to create invite token
+        const currentUser = await User.me();
+        
+        // Create invite token for this assessment
+        const inviteUrl = await PartnerInvite.createInviteLink(assessmentId, currentUser.email);
+        setInviteLink(inviteUrl);
+      } catch (error) {
+        console.error('Failed to load assessment or create invite:', error);
+        // Fallback to old link format
+        const fallbackLink = `${getSiteUrl()}${createPageUrl(`OpenEndedAssessment?id=${assessmentId}&partner=2`)}`;
+        setInviteLink(fallbackLink);
+      }
     };
-    loadAssessment();
+    
+    loadAssessmentAndCreateInvite();
   }, [assessmentId, navigate]);
 
   const copyToClipboard = () => {

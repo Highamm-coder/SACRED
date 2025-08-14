@@ -38,6 +38,44 @@ export const getUserProfile = async (userId) => {
     .eq('id', userId)
     .single();
   
+  // If profile doesn't exist, return null instead of throwing error
+  if (error && error.code === 'PGRST116') {
+    console.warn('Profile not found for user:', userId);
+    return null;
+  }
+  
   handleSupabaseError(error);
   return data;
+};
+
+// Helper function to create user profile if it doesn't exist
+export const ensureUserProfile = async (user) => {
+  let profile = await getUserProfile(user.id);
+  
+  if (!profile) {
+    console.log('Creating missing profile for user:', user.id);
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || null,
+        role: 'user',
+        has_paid: false,
+        onboarding_completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Failed to create profile:', error);
+      handleSupabaseError(error);
+    }
+    
+    profile = data;
+  }
+  
+  return profile;
 };

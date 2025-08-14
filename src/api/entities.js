@@ -10,6 +10,9 @@ export { OpenEndedQuestion, OpenEndedAnswer } from './services/openEnded';
 // User authentication and management
 export { User } from './services/users';
 
+// Partner invite system
+export { PartnerInvite } from './services/partnerInvite';
+
 // Content entities using CMS services
 import { 
   blogPostService, 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Copy, Check, Mail, X } from 'lucide-react';
 import SendInviteModal from './SendInviteModal';
+import { getSiteUrl } from '@/utils';
 
 export default function InviteLinkModal({ isOpen, onClose, assessment }) {
   const [copied, setCopied] = useState(false);
@@ -12,7 +13,7 @@ export default function InviteLinkModal({ isOpen, onClose, assessment }) {
   
   if (!assessment) return null;
   
-  const inviteLink = `${window.location.origin}/Assessment?id=${assessment.id}&partner=2`;
+  const inviteLink = `${getSiteUrl()}/Assessment?id=${assessment.id}&partner=2`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(inviteLink);
