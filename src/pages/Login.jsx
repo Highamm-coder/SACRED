@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User } from '@/api/entities';
 import { LogIn, UserPlus, Eye, EyeOff, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,19 +17,26 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [verificationSent, setVerificationSent] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check for redirect parameter
+  const urlParams = new URLSearchParams(location.search);
+  const redirectTo = urlParams.get('redirect');
 
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
       try {
         await User.me();
-        navigate(createPageUrl('Dashboard'));
+        // If user is already logged in, redirect to intended destination or Dashboard
+        const destination = redirectTo ? decodeURIComponent(redirectTo) : createPageUrl('Dashboard');
+        navigate(destination);
       } catch (error) {
         // User not logged in, stay on login page
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -43,7 +50,8 @@ export default function LoginPage() {
         console.log('Attempting login...');
         await User.signIn(email, password);
         console.log('Login successful, redirecting...');
-        navigate(createPageUrl('Dashboard'));
+        const destination = redirectTo ? decodeURIComponent(redirectTo) : createPageUrl('Dashboard');
+        navigate(destination);
       } else {
         console.log('Attempting signup...');
         const result = await User.signUp(email, password);
@@ -54,7 +62,8 @@ export default function LoginPage() {
           setError(''); // Clear any previous errors
         } else {
           console.log('Signup successful, redirecting...');
-          navigate(createPageUrl('Dashboard'));
+          const destination = redirectTo ? decodeURIComponent(redirectTo) : createPageUrl('Dashboard');
+          navigate(destination);
         }
       }
     } catch (error) {
@@ -81,10 +90,13 @@ export default function LoginPage() {
             </div>
             <div>
               <CardTitle className="text-xl text-[#2F4F3F] font-sacred-bold">
-                {isLogin ? 'Welcome Back' : 'Join SACRED'}
+                {redirectTo ? 'Complete Your Invite' : (isLogin ? 'Welcome Back' : 'Join SACRED')}
               </CardTitle>
               <CardDescription className="font-sacred text-[#6B5B73]">
-                {isLogin ? 'Sign in to continue your journey' : 'Create your account to get started'}
+                {redirectTo 
+                  ? 'Sign in to access your partner\'s assessment invitation'
+                  : (isLogin ? 'Sign in to continue your journey' : 'Create your account to get started')
+                }
               </CardDescription>
             </div>
           </CardHeader>

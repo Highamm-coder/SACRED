@@ -31,7 +31,17 @@ export default function AssessmentPage() {
             }
 
             try {
-                const currentUser = await User.me();
+                let currentUser;
+                try {
+                    currentUser = await User.me();
+                } catch (authError) {
+                    console.log('User not authenticated, redirecting to login with invite context');
+                    // User is not authenticated - redirect to login with invite info preserved
+                    const loginUrl = createPageUrl(`Login?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+                    navigate(loginUrl);
+                    return;
+                }
+                
                 setUser(currentUser);
 
                 // If user hasn't completed any onboarding, redirect them.
