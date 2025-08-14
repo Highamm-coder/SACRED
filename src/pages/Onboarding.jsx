@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRight, ArrowLeft, Heart, Shield, AlertTriangle, Users, Loader2, User as UserIcon, MessageCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Heart, Shield, AlertTriangle, Users, Loader2, User as UserIcon, MessageCircle, Copy, Check, Mail } from 'lucide-react';
 import AuthWrapper from '../components/auth/AuthWrapper';
 import { sendInviteEmail } from '@/api/functions';
 
@@ -19,7 +19,8 @@ const P1_STEPS = {
   WEDDING_DATE: 'wedding_date',
   CUSTOM_MESSAGE: 'custom_message',
   CONSENT: 'consent',
-  DISCLAIMER: 'disclaimer'
+  DISCLAIMER: 'disclaimer',
+  SHARE_LINK: 'share_link'
 };
 
 const P2_STEPS = {
@@ -45,8 +46,16 @@ export default function OnboardingPage() {
     partnerConsent: false, // Only for P1
     disclaimerAccepted: false
   });
+  const [inviteLink, setInviteLink] = useState('');
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -203,20 +212,13 @@ export default function OnboardingPage() {
         console.log('✅ Assessment created successfully:', newAssessment);
         
         // Create secure invite token for Partner 2
-        const inviteLink = await PartnerInvite.createInviteLink(newAssessment.id, user.email);
-        console.log('📧 Sending invite email...');
-        const emailResult = await sendInviteEmail({
-          partnerEmail: formData.partnerEmail,
-          partnerName: formData.partnerName,
-          senderName: formData.userName || 'Your partner',
-          assessmentId: newAssessment.id,
-          inviteLink: inviteLink,
-          customMessage: formData.customMessage || ''
-        });
-        console.log('📧 Email result:', emailResult);
-
-        console.log('🏠 Navigating to dashboard with assessment ID:', newAssessment.id);
-        navigate(createPageUrl(`Dashboard?created=${newAssessment.id}`));
+        const generatedInviteLink = await PartnerInvite.createInviteLink(newAssessment.id, user.email);
+        setInviteLink(generatedInviteLink);
+        
+        console.log('🔗 Invite link generated:', generatedInviteLink);
+        
+        // Move to share link step instead of sending email
+        setCurrentStep(P1_STEPS.SHARE_LINK);
       } catch (error) {
         console.error('Error in onboarding completion:', error);
         alert(`Onboarding failed: ${error.message || error}. Please try again or contact support.`);
@@ -243,6 +245,7 @@ export default function OnboardingPage() {
             case P1_STEPS.CUSTOM_MESSAGE: return true;
             case P1_STEPS.CONSENT: return formData.userConsent && formData.partnerConsent;
             case P1_STEPS.DISCLAIMER: return formData.disclaimerAccepted;
+            case P1_STEPS.SHARE_LINK: return true;
             default: return false;
         }
     }
@@ -412,19 +415,71 @@ export default function OnboardingPage() {
                             </div>
                         </div>
                     )}
+                    
+                    {currentStep === P1_STEPS.SHARE_LINK && (
+                        <div className="space-y-6">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-3">Share with {formData.partnerName}</h2>
+                                <p className="text-[#6B5B73] font-sacred">Your assessment is ready! Share this private link with {formData.partnerName} to begin your journey together.</p>
+                            </div>
+                            
+                            <div className="bg-[#F5F1EB] p-6 rounded-xl border border-[#E6D7C9] space-y-4">
+                                <Label htmlFor="invite-link" className="text-[#2F4F3F] font-medium font-sacred">
+                                    Private Invite Link for {formData.partnerName}
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        id="invite-link" 
+                                        value={inviteLink} 
+                                        readOnly 
+                                        className="text-base border-[#E6D7C9] focus:border-[#7A9B8A] bg-white" 
+                                    />
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={copyToClipboard} 
+                                        className="border-[#E6D7C9] hover:bg-[#F5F1EB]"
+                                    >
+                                        {copied ? (
+                                            <Check className="w-5 h-5 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-5 h-5" />
+                                        )}
+                                    </Button>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 pt-2">
+                                    <a 
+                                        href={`mailto:${formData.partnerEmail}?subject=Let's take our SACRED assessment together&body=Hi ${formData.partnerName},%0A%0AI've set up our SACRED relationship assessment. Please use this private link to join me:%0A%0A${inviteLink}%0A%0A${formData.customMessage ? encodeURIComponent(formData.customMessage) + '%0A%0A' : ''}Looking forward to growing together!%0A%0A${formData.userName}`} 
+                                        className="inline-flex items-center text-[#7A9B8A] hover:underline font-sacred"
+                                    >
+                                        <Mail className="w-4 h-4 mr-2" /> Send via email
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center text-sm text-[#6B5B73] font-sacred">
+                                You can also find this link later in your Dashboard under "Invite Link"
+                            </div>
+                        </div>
+                    )}
                   </>
               )}
 
               {/* Navigation */}
               <div className="flex justify-between items-center mt-8 pt-6 border-t border-[#E6D7C9]">
-                <Button onClick={handleBack} variant="outline" className={`border-[#2F4F3F] text-[#2F4F3F] hover:bg-[#2F4F3F] hover:text-white font-sacred ${currentStep === P1_STEPS.WELCOME || currentStep === P2_STEPS.WELCOME ? 'invisible' : ''}`}>
+                <Button onClick={handleBack} variant="outline" className={`border-[#2F4F3F] text-[#2F4F3F] hover:bg-[#2F4F3F] hover:text-white font-sacred ${currentStep === P1_STEPS.WELCOME || currentStep === P2_STEPS.WELCOME || currentStep === P1_STEPS.SHARE_LINK ? 'invisible' : ''}`}>
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
 
                 {currentStep === P1_STEPS.DISCLAIMER || currentStep === P2_STEPS.DISCLAIMER ? (
                   <Button onClick={handleComplete} disabled={!canProceedFromStep(currentStep) || isLoading} className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold">
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (isPartner2Flow ? 'Begin Assessment' : 'Create & Invite')}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : (isPartner2Flow ? 'Begin Assessment' : 'Create Assessment')}
                     {!isLoading && <ArrowRight className="w-4 h-4 ml-2" />}
+                  </Button>
+                ) : currentStep === P1_STEPS.SHARE_LINK ? (
+                  <Button onClick={() => navigate(createPageUrl('Dashboard'))} className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold">
+                    Continue to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
                   <Button onClick={handleNext} disabled={!canProceedFromStep(currentStep)} className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold">
