@@ -161,7 +161,7 @@ export default function OnboardingPage() {
           partner1_email: user.email,
           partner2_name: formData.partnerName,
           partner2_email: formData.partnerEmail,
-          wedding_date: formData.weddingDate,
+          // wedding_date: formData.weddingDate, // Temporarily disabled - missing from DB schema
           status: 'pending'
         };
         console.log('📊 Creating assessment with data:', assessmentData);
@@ -185,6 +185,7 @@ export default function OnboardingPage() {
         navigate(createPageUrl(`Dashboard?created=${newAssessment.id}`));
       } catch (error) {
         console.error('Error in onboarding completion:', error);
+        alert(`Onboarding failed: ${error.message || error}. Please try again or contact support.`);
         setIsLoading(false);
       }
     }
