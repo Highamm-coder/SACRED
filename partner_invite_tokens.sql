@@ -22,7 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_partner_invite_tokens_assessment ON public.partne
 -- Function to generate secure random tokens
 CREATE OR REPLACE FUNCTION generate_invite_token() RETURNS TEXT AS $$
 BEGIN
-    RETURN encode(gen_random_bytes(32), 'base64url');
+    -- Use base64 encoding and remove problematic characters for URL safety
+    RETURN REPLACE(REPLACE(REPLACE(encode(gen_random_bytes(32), 'base64'), '/', '_'), '+', '-'), '=', '');
 END;
 $$ LANGUAGE plpgsql;
 
