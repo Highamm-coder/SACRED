@@ -44,29 +44,32 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
       
       <CardContent>
         <div className="space-y-3">
-          {question.options && Array.isArray(question.options) ? question.options.map((option, index) => (
-            <Button
-              key={index}
-              onClick={() => {
-                console.log('🖱️ Option clicked:', option, 'for question:', question.questionId || question.question_id);
-                onAnswer(option);
-              }}
-              variant="outline"
-              className={`w-full text-left justify-start p-4 h-auto font-sacred text-base leading-relaxed transition-all duration-200 ${
-                selectedAnswer === option
-                  ? 'bg-[#7A9B8A] text-white border-[#7A9B8A] hover:bg-[#6B8B7A] hover:border-[#6B8B7A] shadow-md'
-                  : 'bg-white border-[#E6D7C9] text-[#2F4F3F] hover:bg-[#F5F1EB] hover:border-[#C4756B]'
-              }`}
-            >
-              {option}
-            </Button>
-          )) : (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-amber-800 font-sacred">
-                Error loading question options. Please refresh the page.
-              </p>
-            </div>
-          )}
+          {question.options && Array.isArray(question.options) ? 
+            question.options.map((option, index) => (
+              <Button
+                key={index}
+                onClick={() => {
+                  console.log('🖱️ Option clicked:', option, 'for question:', question.questionId || question.question_id);
+                  onAnswer(option);
+                }}
+                variant="outline"
+                className={`w-full text-left justify-start p-4 h-auto font-sacred text-base leading-relaxed transition-all duration-200 ${
+                  selectedAnswer === option
+                    ? 'bg-[#7A9B8A] text-white border-[#7A9B8A] hover:bg-[#6B8B7A] hover:border-[#6B8B7A] shadow-md'
+                    : 'bg-white border-[#E6D7C9] text-[#2F4F3F] hover:bg-[#F5F1EB] hover:border-[#C4756B]'
+                }`}
+              >
+                {option}
+              </Button>
+            )) 
+            : (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 font-sacred">
+                  Error loading question options. Please refresh the page.
+                </p>
+              </div>
+            )
+          }
         </div>
       </CardContent>
     </Card>

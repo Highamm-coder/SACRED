@@ -44,8 +44,8 @@ export default function ReportPage() {
         const allQuestions = await Question.list();
         const allAnswers = await Answer.filter({ assessmentId });
 
-        const partner1Answers = allAnswers.filter(a => a.userEmail === assessment.partner1_email);
-        const partner2Answers = allAnswers.filter(a => a.userEmail === assessment.partner2_email);
+        const partner1Answers = allAnswers.filter(a => a.user_email === assessment.partner1_email);
+        const partner2Answers = allAnswers.filter(a => a.user_email === assessment.partner2_email);
 
         const comparisons = allQuestions.map(q => {
           const p1Answer = partner1Answers.find(a => a.question_id === q.question_id);

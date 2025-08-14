@@ -3,7 +3,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Lightbulb, MessageCircle } from 'lucide-react';
 
-export default function ComparisonCard({ question, answer1, answer2, partner1Name, partner2Name }) {
+export default function ComparisonCard({ comparison, assessment }) {
+  // Extract data from the comparison object
+  const question = comparison.question;
+  const answer1 = { answer: comparison.partner1_answer };
+  const answer2 = { answer: comparison.partner2_answer };
+  const partner1Name = assessment.partner1_name;
+  const partner2Name = assessment.partner2_name;
   const getOptionStyle = (answer, otherAnswer, isAligned) => {
     let baseStyle = "p-3 rounded-lg text-sm font-sacred transition-colors";
     if (!isAligned) {

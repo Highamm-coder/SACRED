@@ -53,7 +53,8 @@ export const Question = {
         order: q.order_index || q.order, // Ensure order field exists
         options: parsedOptions, // Parse JSON options to array
         text: q.question_text, // Map question_text to text field
-        explainer: q.help_text // Map help_text to explainer field for descriptions
+        explainer: q.help_text, // Map help_text to explainer field for descriptions
+        discussionPrompt: q.discussion_prompt || null // Include discussion prompt if available
       };
       
       console.log('✅ Processed question:', processedQuestion.questionId, 'Final options:', processedQuestion.options, 'Explainer:', processedQuestion.explainer);
