@@ -1,19 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, Check, Mail, X } from 'lucide-react';
+import { Copy, Check, Mail, X, Loader2 } from 'lucide-react';
 import SendInviteModal from './SendInviteModal';
 import { getSiteUrl } from '@/utils';
+import { PartnerInvite, User } from '@/api/entities';
 
 export default function InviteLinkModal({ isOpen, onClose, assessment }) {
   const [copied, setCopied] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    if (isOpen && assessment) {
+      generateInviteLink();
+    }
+  }, [isOpen, assessment]);
+
+  const generateInviteLink = async () => {
+    if (!assessment) return;
+    
+    setLoading(true);
+    try {
+      const currentUser = await User.me();
+      const tokenUrl = await PartnerInvite.createInviteLink(assessment.id, currentUser.email);
+      setInviteLink(tokenUrl);
+    } catch (error) {
+      console.error('Failed to create invite link:', error);
+      // Fallback to old format
+      const fallbackLink = `${getSiteUrl()}/Assessment?id=${assessment.id}&partner=2`;
+      setInviteLink(fallbackLink);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   if (!assessment) return null;
-  
-  const inviteLink = `${getSiteUrl()}/Assessment?id=${assessment.id}&partner=2`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -57,17 +82,21 @@ export default function InviteLinkModal({ isOpen, onClose, assessment }) {
               <div className="flex gap-2">
                 <Input 
                   id="invite-link" 
-                  value={inviteLink} 
+                  value={loading ? "Generating secure invite link..." : inviteLink} 
                   readOnly 
                   className="text-base border-[#E6D7C9] focus:border-[#C4756B]" 
+                  disabled={loading}
                 />
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={copyToClipboard} 
                   className="border-[#E6D7C9] hover:bg-[#F5F1EB]"
+                  disabled={loading || !inviteLink}
                 >
-                  {copied ? (
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : copied ? (
                     <Check className="w-5 h-5 text-green-500" />
                   ) : (
                     <Copy className="w-5 h-5" />
