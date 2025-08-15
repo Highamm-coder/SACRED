@@ -70,8 +70,9 @@ export const User = {
       throw new Error(errorMessage);
     }
     
-    // Create profile automatically if user was created
-    if (data.user && !error) {
+    // Only create profile if user doesn't need email verification
+    // If verification is needed, profile will be created when they log in after verification
+    if (data.user && !error && data.session) {
       try {
         await this.createProfile(data.user.id, {
           email: data.user.email,
