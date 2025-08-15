@@ -112,9 +112,9 @@ export default function PartnerInvitePage() {
         // User needs to verify email first
         setStep('verify-email');
       } else {
-        // Process invite immediately if no verification needed
+        // Process invite and go directly to Dashboard
         await PartnerInvite.useInviteToken(token, email);
-        setStep('onboarding');
+        navigate(createPageUrl('Dashboard'));
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -315,54 +315,22 @@ export default function PartnerInvitePage() {
             </div>
             <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-2">Check Your Email</h1>
             <p className="text-[#6B5B73] font-sacred mb-6">
-              We've sent you a verification email. Please click the link in the email to verify your account, then return here.
+              We've sent you a verification email. Please click the link in the email to verify your account, then click below.
             </p>
             <Button 
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                // After email verification, process invite and go to dashboard
+                PartnerInvite.useInviteToken(token, email)
+                  .then(() => navigate(createPageUrl('Dashboard')))
+                  .catch(err => {
+                    setFormError(err.message);
+                    setStep('signup');
+                  });
+              }}
               className="bg-[#7A9B8A] hover:bg-[#6A8B7A] text-white font-sacred-bold"
             >
-              I've Verified My Email
+              I've Verified - Continue to Dashboard
             </Button>
-          </div>
-        </div>
-      )}
-
-      {step === 'onboarding' && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-lg w-full text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl font-sacred-bold text-[#2F4F3F] mb-4">Welcome to SACRED!</h1>
-            <p className="text-[#6B5B73] font-sacred mb-6 text-lg">
-              Your account has been created successfully. You're now ready to begin your journey of intimate connection and spiritual growth with your partner.
-            </p>
-            <p className="text-[#6B5B73] font-sacred mb-8">
-              You'll find your assessments and resources in your personal dashboard.
-            </p>
-            <Button 
-              onClick={handleCompleteOnboarding}
-              size="lg"
-              className="bg-[#7A9B8A] hover:bg-[#6A8B7A] text-white py-4 px-8 text-lg font-sacred-bold"
-            >
-              Continue to Dashboard
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {step === 'success' && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-2">Invite Accepted!</h1>
-            <p className="text-[#6B5B73] font-sacred mb-4">
-              You've successfully joined your partner's assessment. Redirecting to your dashboard...
-            </p>
-            <Loader2 className="w-6 h-6 animate-spin text-[#7A9B8A] mx-auto" />
           </div>
         </div>
       )}
