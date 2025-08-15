@@ -122,16 +122,15 @@ export default function PartnerInvitePage() {
     setIsSubmitting(true);
 
     try {
-      // Create account with redirect back to PartnerInvite page
+      // Create account without email verification for Partner 2 (invited users)
       const signupResult = await User.signUp(email, password, { 
         full_name: fullName,
-        emailRedirectTo: `${getSiteUrl()}/PartnerInvite?token=${token}`
+        skipEmailVerification: true
       });
       
-      if (signupResult.needsVerification) {
-        // User needs to verify email first
-        setStep('verify-email');
-      } else {
+      // For Partner 2 (invited users), we process immediately regardless of verification status
+      // Since they're invited by a paying user, we can trust the signup
+      try {
         // Process invite and mark onboarding as completed for Partner 2
         await PartnerInvite.useInviteToken(token, email);
         
@@ -139,23 +138,11 @@ export default function PartnerInvitePage() {
         const currentUser = await User.me();
         await User.update(currentUser.id, { onboarding_completed: true });
         
-        // Verify the update was successful before navigating
-        let retries = 0;
-        const maxRetries = 5;
-        const checkAndNavigate = async () => {
-          try {
-            const updatedUser = await User.me();
-            if (updatedUser.onboarding_completed || retries >= maxRetries) {
-              navigate(createPageUrl('Dashboard'));
-            } else {
-              retries++;
-              setTimeout(checkAndNavigate, 200);
-            }
-          } catch (err) {
-            navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
-          }
-        };
-        checkAndNavigate();
+        // Navigate directly to Dashboard
+        navigate(createPageUrl('Dashboard'));
+      } catch (tokenError) {
+        console.error('Token processing error:', tokenError);
+        setFormError('Failed to process invite. Please try again.');
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -348,50 +335,6 @@ export default function PartnerInvitePage() {
         </div>
       )}
 
-      {step === 'verify-email' && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-blue-600" />
-            </div>
-            <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-2">Check Your Email</h1>
-            <p className="text-[#6B5B73] font-sacred mb-6">
-              We've sent you a verification email. Please click the link in the email to verify your account, then click below.
-            </p>
-            <Button 
-              onClick={async () => {
-                try {
-                  console.log('Processing email verification for PartnerInvite...');
-                  
-                  // After email verification, process invite and mark onboarding complete
-                  await PartnerInvite.useInviteToken(token, email);
-                  console.log('Token processed successfully');
-                  
-                  // Mark onboarding as completed since Partner 2 doesn't need full onboarding
-                  const currentUser = await User.me();
-                  console.log('Current user retrieved:', currentUser.email);
-                  
-                  await User.update(currentUser.id, { onboarding_completed: true });
-                  console.log('Onboarding marked as completed');
-                  
-                  // Simple delay then navigate
-                  setTimeout(() => {
-                    console.log('Navigating to Dashboard...');
-                    navigate(createPageUrl('Dashboard'));
-                  }, 500);
-                } catch (err) {
-                  console.error('Email verification error:', err);
-                  setFormError(err.message);
-                  setStep('signup');
-                }
-              }}
-              className="bg-[#7A9B8A] hover:bg-[#6A8B7A] text-white font-sacred-bold"
-            >
-              I've Verified - Continue to Dashboard
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

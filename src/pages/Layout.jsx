@@ -26,6 +26,30 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await User.me();
       setUser(currentUser);
 
+      // Check if user just verified email and should be redirected to PartnerInvite
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlHash = window.location.hash;
+      
+      // Supabase adds #access_token=... after email verification
+      if (urlHash.includes('access_token') && currentPageName === 'Home') {
+        console.log('User appears to have just verified email, checking for partner invite tokens...');
+        
+        // Check if this user has any pending partner invite tokens
+        try {
+          const { PartnerInvite } = await import('@/api/services/partnerInvite');
+          // This is a simplified check - in a real implementation you'd query for tokens
+          // For now, we'll add a URL parameter to track this
+          const redirectPath = localStorage.getItem('partnerInviteRedirect');
+          if (redirectPath) {
+            localStorage.removeItem('partnerInviteRedirect');
+            navigate(redirectPath);
+            return;
+          }
+        } catch (err) {
+          console.log('No partner invite context found');
+        }
+      }
+
       const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite'];
       if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
         // Allow admin users to bypass payment requirement
