@@ -26,7 +26,7 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await User.me();
       setUser(currentUser);
 
-      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog'];
+      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite'];
       if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
         // Allow admin users to bypass payment requirement
         if (currentUser.role === 'admin') {

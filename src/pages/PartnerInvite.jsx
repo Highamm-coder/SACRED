@@ -82,10 +82,23 @@ export default function PartnerInvitePage() {
       await User.update(user.id, { onboarding_completed: true });
       
       setStep('success');
-      // Redirect to dashboard after a delay
-      setTimeout(() => {
-        navigate(createPageUrl('Dashboard'));
-      }, 2000);
+      // Verify the update was successful before navigating
+      let retries = 0;
+      const maxRetries = 10; // More retries for the 2-second delay case
+      const checkAndNavigate = async () => {
+        try {
+          const updatedUser = await User.me();
+          if (updatedUser.onboarding_completed || retries >= maxRetries) {
+            navigate(createPageUrl('Dashboard'));
+          } else {
+            retries++;
+            setTimeout(checkAndNavigate, 200);
+          }
+        } catch (err) {
+          navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
+        }
+      };
+      setTimeout(checkAndNavigate, 2000); // Keep the 2-second delay for this success case
     } catch (err) {
       setError(err.message || 'Failed to process invite');
       setStep('error');
@@ -123,7 +136,23 @@ export default function PartnerInvitePage() {
         const currentUser = await User.me();
         await User.update(currentUser.id, { onboarding_completed: true });
         
-        navigate(createPageUrl('Dashboard'));
+        // Verify the update was successful before navigating
+        let retries = 0;
+        const maxRetries = 5;
+        const checkAndNavigate = async () => {
+          try {
+            const updatedUser = await User.me();
+            if (updatedUser.onboarding_completed || retries >= maxRetries) {
+              navigate(createPageUrl('Dashboard'));
+            } else {
+              retries++;
+              setTimeout(checkAndNavigate, 200);
+            }
+          } catch (err) {
+            navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
+          }
+        };
+        checkAndNavigate();
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -336,7 +365,23 @@ export default function PartnerInvitePage() {
                   const currentUser = await User.me();
                   await User.update(currentUser.id, { onboarding_completed: true });
                   
-                  navigate(createPageUrl('Dashboard'));
+                  // Verify the update was successful before navigating
+                  let retries = 0;
+                  const maxRetries = 5;
+                  const checkAndNavigate = async () => {
+                    try {
+                      const updatedUser = await User.me();
+                      if (updatedUser.onboarding_completed || retries >= maxRetries) {
+                        navigate(createPageUrl('Dashboard'));
+                      } else {
+                        retries++;
+                        setTimeout(checkAndNavigate, 200);
+                      }
+                    } catch (err) {
+                      navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
+                    }
+                  };
+                  checkAndNavigate();
                 } catch (err) {
                   setFormError(err.message);
                   setStep('signup');
