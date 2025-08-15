@@ -37,9 +37,8 @@ export default function OpenEndedInvitePage() {
         setInviteLink(inviteUrl);
       } catch (error) {
         console.error('Failed to load assessment or create invite:', error);
-        // Fallback to old link format
-        const fallbackLink = `${getSiteUrl()}${createPageUrl(`OpenEndedAssessment?id=${assessmentId}&partner=2`)}`;
-        setInviteLink(fallbackLink);
+        // Show error instead of fallback to old system
+        setInviteLink('Error: Could not create invite link');
       }
     };
     

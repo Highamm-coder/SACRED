@@ -77,6 +77,10 @@ export default function PartnerInvitePage() {
   const processInviteForLoggedInUser = async (user) => {
     try {
       const result = await PartnerInvite.useInviteToken(token, user.email);
+      
+      // Mark onboarding as completed since Partner 2 doesn't need full onboarding
+      await User.update(user.id, { onboarding_completed: true });
+      
       setStep('success');
       // Redirect to dashboard after a delay
       setTimeout(() => {
@@ -112,8 +116,13 @@ export default function PartnerInvitePage() {
         // User needs to verify email first
         setStep('verify-email');
       } else {
-        // Process invite and go directly to Dashboard
+        // Process invite and mark onboarding as completed for Partner 2
         await PartnerInvite.useInviteToken(token, email);
+        
+        // Mark onboarding as completed since Partner 2 doesn't need full onboarding
+        const currentUser = await User.me();
+        await User.update(currentUser.id, { onboarding_completed: true });
+        
         navigate(createPageUrl('Dashboard'));
       }
     } catch (err) {
@@ -318,14 +327,20 @@ export default function PartnerInvitePage() {
               We've sent you a verification email. Please click the link in the email to verify your account, then click below.
             </p>
             <Button 
-              onClick={() => {
-                // After email verification, process invite and go to dashboard
-                PartnerInvite.useInviteToken(token, email)
-                  .then(() => navigate(createPageUrl('Dashboard')))
-                  .catch(err => {
-                    setFormError(err.message);
-                    setStep('signup');
-                  });
+              onClick={async () => {
+                try {
+                  // After email verification, process invite and mark onboarding complete
+                  await PartnerInvite.useInviteToken(token, email);
+                  
+                  // Mark onboarding as completed since Partner 2 doesn't need full onboarding
+                  const currentUser = await User.me();
+                  await User.update(currentUser.id, { onboarding_completed: true });
+                  
+                  navigate(createPageUrl('Dashboard'));
+                } catch (err) {
+                  setFormError(err.message);
+                  setStep('signup');
+                }
               }}
               className="bg-[#7A9B8A] hover:bg-[#6A8B7A] text-white font-sacred-bold"
             >

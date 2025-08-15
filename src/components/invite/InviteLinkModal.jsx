@@ -30,9 +30,8 @@ export default function InviteLinkModal({ isOpen, onClose, assessment }) {
       setInviteLink(tokenUrl);
     } catch (error) {
       console.error('Failed to create invite link:', error);
-      // Fallback to old format
-      const fallbackLink = `${getSiteUrl()}/Assessment?id=${assessment.id}&partner=2`;
-      setInviteLink(fallbackLink);
+      // Show error instead of fallback to old system
+      setInviteLink('Error: Could not create secure invite link');
     } finally {
       setLoading(false);
     }
