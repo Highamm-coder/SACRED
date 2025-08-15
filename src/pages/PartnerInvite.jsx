@@ -11,7 +11,6 @@ import { Heart, Loader2, User2, Mail, Lock, ArrowRight, CheckCircle } from 'luci
 export default function PartnerInvitePage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [inviteData, setInviteData] = useState(null);
   const [error, setError] = useState(null);
   const [step, setStep] = useState('loading'); // loading, signup, onboarding, success
@@ -29,7 +28,7 @@ export default function PartnerInvitePage() {
   useEffect(() => {
     if (!token) {
       setError('Invalid invite link - no token provided');
-      setLoading(false);
+      setStep('error');
       return;
     }
 
@@ -68,8 +67,7 @@ export default function PartnerInvitePage() {
       } catch (err) {
         console.error('Token validation error:', err);
         setError(err.message || 'Failed to validate invite link');
-      } finally {
-        setLoading(false);
+        setStep('error');
       }
     };
 
@@ -86,7 +84,7 @@ export default function PartnerInvitePage() {
       }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to process invite');
-      setLoading(false);
+      setStep('error');
     }
   };
 
@@ -130,7 +128,7 @@ export default function PartnerInvitePage() {
     navigate(createPageUrl('Dashboard'));
   };
 
-  if (loading || step === 'loading') {
+  if (step === 'loading') {
     return (
       <div className="min-h-screen bg-[#F5F1EB] flex items-center justify-center">
         <div className="text-center">
@@ -141,7 +139,7 @@ export default function PartnerInvitePage() {
     );
   }
 
-  if (error) {
+  if (step === 'error' || error) {
     return (
       <div className="min-h-screen bg-[#F5F1EB] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">

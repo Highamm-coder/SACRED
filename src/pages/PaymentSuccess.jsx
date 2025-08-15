@@ -22,16 +22,35 @@ export default function PaymentSuccessPage() {
       }
 
       try {
-        const { data, error } = await verifyCheckoutSession({ sessionId });
-        
-        if (error || !data.success) {
-          throw new Error(data?.error || 'Verification failed. Please do not attempt to pay again and contact support.');
+        // Give the webhook some time to process (up to 10 seconds)
+        let attempts = 0;
+        const maxAttempts = 10;
+        let verified = false;
+
+        while (attempts < maxAttempts && !verified) {
+          const result = await verifyCheckoutSession({ sessionId });
+          
+          if (result.error) {
+            throw new Error(result.error);
+          }
+
+          if (result.verified) {
+            verified = true;
+            setStatus('success');
+            setTimeout(() => {
+              navigate(createPageUrl('Dashboard'));
+            }, 3000); // Redirect to dashboard after 3 seconds
+            break;
+          }
+
+          // Wait 1 second before checking again
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          attempts++;
         }
 
-        setStatus('success');
-        setTimeout(() => {
-          navigate(createPageUrl('Dashboard'));
-        }, 3000); // Redirect to dashboard after 3 seconds
+        if (!verified) {
+          throw new Error('Payment verification timed out. Your payment may still be processing. Please check your dashboard in a few minutes or contact support if the issue persists.');
+        }
 
       } catch (err) {
         setStatus('error');

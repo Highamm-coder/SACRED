@@ -121,25 +121,86 @@ export const checkWeddingDates = async (userId) => {
 };
 
 export const createStripeCheckoutSession = async (sessionData) => {
-  // TODO: Implement Stripe checkout session creation
-  console.log('Create Stripe checkout session:', sessionData);
-  
-  return { 
-    success: true, 
-    checkoutUrl: 'https://checkout.stripe.com/placeholder',
-    message: 'Stripe checkout session created (placeholder)' 
-  };
+  try {
+    console.log('Creating Stripe checkout session:', sessionData);
+    
+    // Call Supabase Edge Function to create checkout session
+    const response = await supabase.functions.invoke('create-checkout-session', {
+      body: sessionData
+    });
+
+    if (response.error) {
+      console.error('Edge function error:', response.error);
+      throw new Error(response.error.message || 'Failed to create checkout session');
+    }
+
+    if (!response.data || !response.data.success) {
+      console.error('Invalid response from edge function:', response.data);
+      throw new Error(response.data?.error || 'Invalid response from payment service');
+    }
+
+    console.log('Checkout session created successfully:', response.data.data.sessionId);
+    
+    return { 
+      success: true,
+      data: {
+        url: response.data.data.url,
+        sessionId: response.data.data.sessionId
+      }
+    };
+    
+  } catch (error) {
+    console.error('Error creating Stripe checkout session:', error);
+    
+    return { 
+      success: false,
+      error: error.message || 'Failed to create checkout session'
+    };
+  }
 };
 
-export const verifyCheckoutSession = async (sessionId) => {
-  // TODO: Implement Stripe session verification
-  console.log('Verify checkout session:', sessionId);
-  
-  return { 
-    success: true, 
-    verified: true,
-    message: 'Checkout session verified (placeholder)' 
-  };
+export const verifyCheckoutSession = async (sessionData) => {
+  try {
+    console.log('Verifying checkout session:', sessionData);
+    
+    // For now, we'll rely on the webhook to update the user's payment status
+    // This function just checks if the user's payment status has been updated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check if user's payment status has been updated
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('has_paid')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      throw new Error('Failed to verify payment status');
+    }
+
+    console.log('Payment verification result:', { has_paid: profile.has_paid });
+    
+    return { 
+      success: true,
+      verified: profile.has_paid,
+      data: {
+        has_paid: profile.has_paid
+      }
+    };
+    
+  } catch (error) {
+    console.error('Error verifying checkout session:', error);
+    
+    return { 
+      success: false,
+      error: error.message || 'Failed to verify checkout session'
+    };
+  }
 };
 
 // Helper function for future Supabase Edge Function calls
