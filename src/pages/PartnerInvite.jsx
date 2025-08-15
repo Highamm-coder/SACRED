@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@/api/entities';
 import { PartnerInvite } from '@/api/services/partnerInvite';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, getSiteUrl } from '@/utils';
 import { Heart, Loader2, User2, Mail, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function PartnerInvitePage() {
@@ -122,8 +122,11 @@ export default function PartnerInvitePage() {
     setIsSubmitting(true);
 
     try {
-      // Create account
-      const signupResult = await User.signUp(email, password, { full_name: fullName });
+      // Create account with redirect back to PartnerInvite page
+      const signupResult = await User.signUp(email, password, { 
+        full_name: fullName,
+        emailRedirectTo: `${getSiteUrl()}/PartnerInvite?token=${token}`
+      });
       
       if (signupResult.needsVerification) {
         // User needs to verify email first
@@ -358,31 +361,26 @@ export default function PartnerInvitePage() {
             <Button 
               onClick={async () => {
                 try {
+                  console.log('Processing email verification for PartnerInvite...');
+                  
                   // After email verification, process invite and mark onboarding complete
                   await PartnerInvite.useInviteToken(token, email);
+                  console.log('Token processed successfully');
                   
                   // Mark onboarding as completed since Partner 2 doesn't need full onboarding
                   const currentUser = await User.me();
-                  await User.update(currentUser.id, { onboarding_completed: true });
+                  console.log('Current user retrieved:', currentUser.email);
                   
-                  // Verify the update was successful before navigating
-                  let retries = 0;
-                  const maxRetries = 5;
-                  const checkAndNavigate = async () => {
-                    try {
-                      const updatedUser = await User.me();
-                      if (updatedUser.onboarding_completed || retries >= maxRetries) {
-                        navigate(createPageUrl('Dashboard'));
-                      } else {
-                        retries++;
-                        setTimeout(checkAndNavigate, 200);
-                      }
-                    } catch (err) {
-                      navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
-                    }
-                  };
-                  checkAndNavigate();
+                  await User.update(currentUser.id, { onboarding_completed: true });
+                  console.log('Onboarding marked as completed');
+                  
+                  // Simple delay then navigate
+                  setTimeout(() => {
+                    console.log('Navigating to Dashboard...');
+                    navigate(createPageUrl('Dashboard'));
+                  }, 500);
                 } catch (err) {
+                  console.error('Email verification error:', err);
                   setFormError(err.message);
                   setStep('signup');
                 }

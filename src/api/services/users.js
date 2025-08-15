@@ -42,12 +42,15 @@ export const User = {
   async signUp(email, password, userData = {}) {
     console.log('Attempting signup with:', { email, password: '***', userData });
     
+    // Extract emailRedirectTo from userData if provided, otherwise use default
+    const { emailRedirectTo, ...userMetadata } = userData;
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: userData,
-        emailRedirectTo: getSiteUrl()
+        data: userMetadata,
+        emailRedirectTo: emailRedirectTo || getSiteUrl()
       }
     });
     
