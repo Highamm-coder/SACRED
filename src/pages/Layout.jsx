@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '@/api/entities';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { supabase } from '@/api/supabaseClient';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,7 +27,7 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await User.me();
       setUser(currentUser);
 
-      // Check if user just verified email and should be redirected to PartnerInvite
+      // Check if user just verified email and should be processed for Partner 2 invite
       const urlParams = new URLSearchParams(window.location.search);
       const urlHash = window.location.hash;
       
@@ -36,17 +37,58 @@ export default function Layout({ children, currentPageName }) {
         
         // Check if this user has any pending partner invite tokens
         try {
+          // Import PartnerInvite service and User service
           const { PartnerInvite } = await import('@/api/services/partnerInvite');
-          // This is a simplified check - in a real implementation you'd query for tokens
-          // For now, we'll add a URL parameter to track this
-          const redirectPath = localStorage.getItem('partnerInviteRedirect');
-          if (redirectPath) {
-            localStorage.removeItem('partnerInviteRedirect');
-            navigate(redirectPath);
+          const { User } = await import('@/api/entities');
+          
+          // Query the database for any unused tokens where user might be the intended partner2
+          // First check if there are tokens with this email already set as partner2
+          let { data: tokens } = await supabase
+            .from('partner_invite_tokens')
+            .select('*')
+            .eq('partner2_email', currentUser.email)
+            .eq('status', 'pending')
+            .limit(1);
+          
+          // If no tokens with partner2_email set, check if there are any pending tokens
+          // This handles the case where the token was created but partner2_email isn't set yet
+          if (!tokens || tokens.length === 0) {
+            // Check localStorage for stored token from the signup process
+            const storedToken = localStorage.getItem('partnerInviteToken');
+            if (storedToken) {
+              const { data: storedTokenData } = await supabase
+                .from('partner_invite_tokens')
+                .select('*')
+                .eq('token', storedToken)
+                .eq('status', 'pending')
+                .limit(1);
+              
+              if (storedTokenData && storedTokenData.length > 0) {
+                tokens = storedTokenData;
+                localStorage.removeItem('partnerInviteToken'); // Clean up
+              }
+            }
+          }
+          
+          if (tokens && tokens.length > 0) {
+            const token = tokens[0];
+            console.log('Found pending partner invite token, processing...');
+            
+            // Process the invite token
+            await PartnerInvite.useInviteToken(token.token, currentUser.email);
+            
+            // Mark user as paid and onboarding complete
+            await User.update(currentUser.id, { 
+              onboarding_completed: true,
+              has_paid: true
+            });
+            
+            console.log('Partner 2 invite processed successfully, redirecting to Dashboard...');
+            navigate(createPageUrl('Dashboard'));
             return;
           }
         } catch (err) {
-          console.log('No partner invite context found');
+          console.log('No partner invite context found or processing failed:', err);
         }
       }
 

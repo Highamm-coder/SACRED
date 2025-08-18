@@ -150,6 +150,10 @@ export default function PartnerInvitePage() {
       } else if (signupResult.user && !signupResult.session) {
         // User created but not authenticated yet (needs email verification)
         console.log('User needs email verification');
+        
+        // Store the token in localStorage so we can process it after email verification
+        localStorage.setItem('partnerInviteToken', token);
+        
         setStep('verify-email');
       } else {
         throw new Error('Signup failed - no user created');
