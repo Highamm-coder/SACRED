@@ -153,6 +153,7 @@ export default function PartnerInvitePage() {
         
         // Store the token in localStorage so we can process it after email verification
         localStorage.setItem('partnerInviteToken', token);
+        console.log('💾 Stored partner invite token in localStorage:', token);
         
         setStep('verify-email');
       } else {

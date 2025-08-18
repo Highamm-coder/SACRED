@@ -39,6 +39,10 @@ export default function Layout({ children, currentPageName }) {
       // This handles cases where email verification doesn't preserve the hash
       const storedToken = localStorage.getItem('partnerInviteToken');
       
+      console.log('🔍 Debug - Stored token:', storedToken);
+      console.log('🔍 Debug - Current user:', currentUser ? 'EXISTS' : 'NULL');
+      console.log('🔍 Debug - User email:', currentUser?.email);
+      
       if (storedToken && currentUser) {
         console.log('🔑 Found stored partner invite token and authenticated user, processing...');
         console.log('✅ Processing partner invite for authenticated user...');
