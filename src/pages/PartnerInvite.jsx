@@ -78,8 +78,11 @@ export default function PartnerInvitePage() {
     try {
       const result = await PartnerInvite.useInviteToken(token, user.email);
       
-      // Mark onboarding as completed since Partner 2 doesn't need full onboarding
-      await User.update(user.id, { onboarding_completed: true });
+      // Mark onboarding as completed and paid since Partner 2 doesn't need full onboarding or payment
+      await User.update(user.id, { 
+        onboarding_completed: true,
+        has_paid: true  // Partner 2 inherits payment from Partner 1
+      });
       
       setStep('success');
       // Verify the update was successful before navigating
@@ -134,9 +137,12 @@ export default function PartnerInvitePage() {
         // Process invite and mark onboarding as completed for Partner 2
         await PartnerInvite.useInviteToken(token, email);
         
-        // Mark onboarding as completed since Partner 2 doesn't need full onboarding
+        // Mark onboarding as completed and paid since Partner 2 doesn't need full onboarding or payment
         const currentUser = await User.me();
-        await User.update(currentUser.id, { onboarding_completed: true });
+        await User.update(currentUser.id, { 
+          onboarding_completed: true,
+          has_paid: true  // Partner 2 inherits payment from Partner 1
+        });
         
         // Navigate directly to Dashboard
         navigate(createPageUrl('Dashboard'));
