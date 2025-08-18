@@ -24,9 +24,8 @@ export default function Layout({ children, currentPageName }) {
 
   const checkUser = async () => {
     try {
-      const currentUser = await User.me();
-      setUser(currentUser);
-
+      let currentUser = await User.me();
+      
       // Check if user just verified email and should be processed for Partner 2 invite
       const urlParams = new URLSearchParams(window.location.search);
       const urlHash = window.location.hash;
@@ -35,54 +34,28 @@ export default function Layout({ children, currentPageName }) {
       console.log('Layout checkUser - URL hash:', urlHash, 'Current page:', currentPageName);
       console.log('Layout checkUser - Full URL:', window.location.href);
       
-      // Check if there's a stored partner invite token (regardless of URL hash)
-      // This handles cases where email verification doesn't preserve the hash
-      const storedToken = localStorage.getItem('partnerInviteToken');
-      
-      console.log('🔍 Debug - Stored token:', storedToken);
-      console.log('🔍 Debug - Current user:', currentUser ? 'EXISTS' : 'NULL');
-      console.log('🔍 Debug - User email:', currentUser?.email);
-      
-      if (storedToken && currentUser) {
-        console.log('🔑 Found stored partner invite token and authenticated user, processing...');
-        console.log('✅ Processing partner invite for authenticated user...');
+      // ENTERPRISE FIX: Process partner invites BEFORE payment validation
+      // Check if this user has pending partner invite tokens
+      if (currentUser && !currentUser.has_paid && !currentUser.onboarding_completed) {
+        console.log('🔍 Checking for pending partner invite tokens for user:', currentUser.email);
         
-        // Process the stored partner invite token
         try {
           // Import PartnerInvite service and User service
           const { PartnerInvite } = await import('@/api/services/partnerInvite');
           const { User } = await import('@/api/entities');
           
-          console.log('🔍 Stored token in localStorage:', storedToken);
-          
-          // Check what token exists (any status)
-          const { data: allTokenData } = await supabase
+          // Check if this user has any pending tokens specifically assigned to their email
+          const { data: pendingTokens } = await supabase
             .from('partner_invite_tokens')
             .select('*')
-            .eq('token', storedToken)
-            .limit(1);
-          
-          console.log('🔍 Found stored token data (any status):', allTokenData);
-          
-          // Check for pending only
-          const { data: storedTokenData } = await supabase
-            .from('partner_invite_tokens')
-            .select('*')
-            .eq('token', storedToken)
             .eq('status', 'pending')
-            .limit(1);
+            .eq('partner2_email', currentUser.email)
+            .limit(5);
           
-          console.log('🔍 Found pending stored token data:', storedTokenData);
+          console.log('🔍 Found pending tokens for user:', pendingTokens);
           
-          let tokens = null;
-          if (storedTokenData && storedTokenData.length > 0) {
-            tokens = storedTokenData;
-            localStorage.removeItem('partnerInviteToken'); // Clean up
-            console.log('✅ Using stored token for processing');
-          }
-          
-          if (tokens && tokens.length > 0) {
-            const token = tokens[0];
+          if (pendingTokens && pendingTokens.length > 0) {
+            const token = pendingTokens[0];
             console.log('🎯 Found pending partner invite token, processing...', token);
             
             try {
@@ -90,8 +63,28 @@ export default function Layout({ children, currentPageName }) {
               await PartnerInvite.useInviteToken(token.token, currentUser.email);
               console.log('✅ Invite token processed successfully');
               
-              // Mark user as paid and onboarding complete
-              // First ensure the profile exists
+              // Validate Partner 1 has paid before granting Partner 2 access
+              console.log('🔍 Validating Partner 1 payment status...');
+              const { data: partner1Profile } = await supabase
+                .from('profiles')
+                .select('has_paid')
+                .eq('email', token.partner1_email)
+                .single();
+              
+              if (!partner1Profile?.has_paid) {
+                console.error('🚫 AUDIT: Payment inheritance blocked in Layout - Partner 1 unpaid:', token.partner1_email);
+                throw new Error('Partner 1 must complete payment before Partner 2 can access the assessment');
+              }
+              
+              console.log('💰 AUDIT: Payment inheritance authorized in Layout:', {
+                partner1_email: token.partner1_email,
+                partner2_email: currentUser.email,
+                token: token.token,
+                timestamp: new Date().toISOString(),
+                location: 'Layout.jsx'
+              });
+              
+              // Mark user as paid and onboarding complete (inheritance validated)
               try {
                 console.log('📝 Ensuring user profile exists before updating...');
                 const profileCheck = await supabase
@@ -117,11 +110,11 @@ export default function Layout({ children, currentPageName }) {
                 } else {
                   // Profile exists, update it
                   console.log('📝 Updating existing profile...');
-                  const updateResult = await User.update(currentUser.id, { 
+                  await User.update(currentUser.id, { 
                     onboarding_completed: true,
                     has_paid: true
                   });
-                  console.log('✅ User updated with paid/onboarding flags:', updateResult);
+                  console.log('✅ User updated with paid/onboarding flags');
                 }
               } catch (profileError) {
                 console.error('❌ Error with profile creation/update:', profileError);
@@ -140,32 +133,57 @@ export default function Layout({ children, currentPageName }) {
                     updated_at: new Date().toISOString()
                   });
                 console.log('🔄 Direct database upsert result:', { directUpdate, directError });
+                
+                if (directError) {
+                  throw new Error('Failed to update user payment status after partner invite processing');
+                }
               }
               
-              console.log('🔄 Redirecting to Dashboard...');
-              navigate(createPageUrl('Dashboard'));
-              return;
+              console.log('✅ AUDIT: Payment inheritance completed in Layout for:', currentUser.email);
+              
+              // CRITICAL FIX: Refresh user data after partner processing to ensure payment validation uses updated state
+              console.log('🔄 Refreshing user data after partner processing...');
+              currentUser = await User.me();
+              console.log('✅ User data refreshed with updated payment status:', currentUser.has_paid);
+              
             } catch (processError) {
               console.error('❌ Error processing partner invite:', processError);
+              // Don't throw here - let normal payment flow continue
             }
           } else {
             console.log('❌ No pending tokens found for user');
           }
         } catch (err) {
           console.log('No partner invite context found or processing failed:', err);
+          // Don't throw here - let normal payment flow continue
         }
       }
 
+      // Set user state with potentially updated data after partner processing
+      setUser(currentUser);
+
+      // ENTERPRISE FIX: Payment validation now uses refreshed user data
       const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite'];
       if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
         // Allow admin users to bypass payment requirement
         if (currentUser.role === 'admin') {
           return; // Don't redirect admins to payment page
         }
+        console.log('❌ User payment validation failed, redirecting to PaymentRequired. User status:', {
+          has_paid: currentUser.has_paid,
+          onboarding_completed: currentUser.onboarding_completed,
+          email: currentUser.email
+        });
         navigate(createPageUrl('PaymentRequired'));
+      } else if (currentUser && currentUser.has_paid) {
+        console.log('✅ User payment validation passed:', {
+          has_paid: currentUser.has_paid,
+          email: currentUser.email
+        });
       }
 
     } catch (e) {
+      console.error('❌ Critical error in checkUser:', e);
       setUser(null);
     } finally {
       setIsLoading(false);

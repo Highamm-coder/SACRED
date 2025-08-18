@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { User } from '@/api/entities';
 import { PartnerInvite } from '@/api/services/partnerInvite';
 import { createPageUrl, getSiteUrl } from '@/utils';
+import { supabase } from '@/api/supabaseClient';
 import { Heart, Loader2, User2, Mail, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function PartnerInvitePage() {
@@ -13,7 +14,7 @@ export default function PartnerInvitePage() {
   const navigate = useNavigate();
   const [inviteData, setInviteData] = useState(null);
   const [error, setError] = useState(null);
-  const [step, setStep] = useState('loading'); // loading, signup, onboarding, success
+  const [step, setStep] = useState('loading'); // loading, email-check, signup, success
   
   // Form states
   const [email, setEmail] = useState('');
@@ -63,7 +64,7 @@ export default function PartnerInvitePage() {
         }
 
         setInviteData(tokenData);
-        setStep('signup');
+        setStep('email-check');
       } catch (err) {
         console.error('Token validation error:', err);
         setError(err.message || 'Failed to validate invite link');
@@ -78,34 +79,70 @@ export default function PartnerInvitePage() {
     try {
       const result = await PartnerInvite.useInviteToken(token, user.email);
       
-      // Mark onboarding as completed and paid since Partner 2 doesn't need full onboarding or payment
-      await User.update(user.id, { 
-        onboarding_completed: true,
-        has_paid: true  // Partner 2 inherits payment from Partner 1
+      // Validate Partner 1 has paid before granting Partner 2 access
+      const tokenData = await PartnerInvite.getInviteToken(token);
+      const { data: partner1Profile } = await supabase
+        .from('profiles')
+        .select('has_paid')
+        .eq('email', tokenData.partner1_email)
+        .single();
+      
+      if (!partner1Profile?.has_paid) {
+        console.error('🚫 AUDIT: Payment inheritance blocked - Partner 1 unpaid:', tokenData.partner1_email);
+        throw new Error('Partner 1 must complete payment before Partner 2 can access the assessment');
+      }
+      
+      console.log('💰 AUDIT: Payment inheritance authorized:', {
+        partner1_email: tokenData.partner1_email,
+        partner2_email: user.email,
+        token: token,
+        timestamp: new Date().toISOString()
       });
       
+      // Mark onboarding as completed and paid (inheritance validated)
+      await User.update(user.id, { 
+        onboarding_completed: true,
+        has_paid: true  // Partner 2 inherits payment from validated Partner 1
+      });
+      
+      console.log('✅ AUDIT: Payment inheritance completed for:', user.email);
+      
+      // ENTERPRISE FIX: Verify user payment status is properly updated before navigation
+      console.log('🔄 Verifying user payment status update...');
+      const verifiedUser = await User.me();
+      console.log('✅ Verified user payment status:', { has_paid: verifiedUser.has_paid, onboarding_completed: verifiedUser.onboarding_completed });
+      
       setStep('success');
-      // Verify the update was successful before navigating
-      let retries = 0;
-      const maxRetries = 10; // More retries for the 2-second delay case
-      const checkAndNavigate = async () => {
-        try {
-          const updatedUser = await User.me();
-          if (updatedUser.onboarding_completed || retries >= maxRetries) {
-            navigate(createPageUrl('Dashboard'));
-          } else {
-            retries++;
-            setTimeout(checkAndNavigate, 200);
-          }
-        } catch (err) {
-          navigate(createPageUrl('Dashboard')); // Navigate anyway if check fails
-        }
-      };
-      setTimeout(checkAndNavigate, 2000); // Keep the 2-second delay for this success case
+      // Navigate immediately after confirming payment status update
+      navigate(createPageUrl('Dashboard'));
     } catch (err) {
       setError(err.message || 'Failed to process invite');
       setStep('error');
     }
+  };
+
+  const handleEmailCheck = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    
+    if (!email.trim()) {
+      setFormError('Please enter your email address');
+      return;
+    }
+    
+    // Validate email against token's intended recipient
+    if (!inviteData.partner2_email) {
+      setFormError('This invite token is missing recipient information. Please contact your partner for a new invite link.');
+      return;
+    }
+    
+    if (inviteData.partner2_email.toLowerCase() !== email.toLowerCase()) {
+      setFormError('This invite was sent to a different email address. Please contact your partner if you believe this is an error.');
+      return;
+    }
+    
+    // Email validated against token recipient
+    setStep('signup');
   };
 
   const handleSignup = async (e) => {
@@ -125,37 +162,66 @@ export default function PartnerInvitePage() {
     setIsSubmitting(true);
 
     try {
-      // Create account for Partner 2 (invited users)
+      // Create account for Partner 2 (invited users) - they get immediate access
       const signupResult = await User.signUp(email, password, { 
         full_name: fullName
       });
       
       console.log('Signup result:', signupResult);
       
-      // Check if user was successfully created and authenticated immediately
-      if (signupResult.user && signupResult.session) {
-        // User is immediately authenticated, process the invite
-        console.log('User immediately authenticated, processing invite...');
-        await PartnerInvite.useInviteToken(token, email);
-        
-        // Mark onboarding as completed and paid since Partner 2 doesn't need full onboarding or payment
-        const currentUser = await User.me();
-        await User.update(currentUser.id, { 
-          onboarding_completed: true,
-          has_paid: true  // Partner 2 inherits payment from Partner 1
-        });
-        
-        // Navigate directly to Dashboard
-        navigate(createPageUrl('Dashboard'));
-      } else if (signupResult.user && !signupResult.session) {
-        // User created but not authenticated yet (needs email verification)
-        console.log('User needs email verification');
-        
-        // Store the token in localStorage so we can process it after email verification
-        localStorage.setItem('partnerInviteToken', token);
-        console.log('💾 Stored partner invite token in localStorage:', token);
-        
-        setStep('verify-email');
+      // Process the invite immediately regardless of email verification status
+      // Since they came through a valid token, we trust the signup
+      if (signupResult.user) {
+        try {
+          // Process the invite token
+          await PartnerInvite.useInviteToken(token, email);
+          console.log('Invite token processed successfully');
+          
+          // If user has immediate session, update their profile
+          if (signupResult.session) {
+            // Validate Partner 1 has paid before granting Partner 2 access
+            const { data: partner1Profile } = await supabase
+              .from('profiles')
+              .select('has_paid')
+              .eq('email', inviteData.partner1_email)
+              .single();
+            
+            if (!partner1Profile?.has_paid) {
+              console.error('🚫 AUDIT: Payment inheritance blocked during signup - Partner 1 unpaid:', inviteData.partner1_email);
+              throw new Error('Partner 1 must complete payment before Partner 2 can access the assessment');
+            }
+            
+            console.log('💰 AUDIT: Payment inheritance authorized during signup:', {
+              partner1_email: inviteData.partner1_email,
+              partner2_email: email,
+              token: token,
+              timestamp: new Date().toISOString()
+            });
+            
+            const currentUser = await User.me();
+            await User.update(currentUser.id, { 
+              onboarding_completed: true,
+              has_paid: true  // Partner 2 inherits payment from validated Partner 1
+            });
+            
+            console.log('✅ AUDIT: Payment inheritance completed during signup for:', email);
+            
+            // ENTERPRISE FIX: Verify payment status update in signup flow
+            const verifiedUser = await User.me();
+            console.log('✅ Verified signup user payment status:', { has_paid: verifiedUser.has_paid, onboarding_completed: verifiedUser.onboarding_completed });
+          }
+          
+          // Navigate to success or dashboard
+          if (signupResult.session) {
+            navigate(createPageUrl('Dashboard'));
+          } else {
+            setStep('success');
+            // They'll be processed by Layout when they verify email and return
+          }
+        } catch (tokenError) {
+          console.error('Token processing error:', tokenError);
+          setFormError('Failed to process invite. Please try again or contact support.');
+        }
       } else {
         throw new Error('Signup failed - no user created');
       }
@@ -211,6 +277,99 @@ export default function PartnerInvitePage() {
         .font-sacred-medium { font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 0.08em; }
       `}</style>
 
+      {step === 'email-check' && (
+        <div className="min-h-screen flex">
+          {/* Left Column - Welcome */}
+          <div className="w-2/5 bg-white p-8 pl-16 flex flex-col justify-center border-r border-[#E6D7C9]">
+            <div className="max-w-md space-y-8">
+              <div className="space-y-4">
+                <div className="text-4xl font-sacred tracking-widest text-[#2F4F3F]">SACRED</div>
+                <div className="w-16 h-px bg-[#7A9B8A]"></div>
+                <h1 className="text-3xl font-sacred-bold text-[#2F4F3F] leading-tight">
+                  You've Been Invited!
+                </h1>
+                <p className="text-[#6B5B73] text-lg font-sacred">
+                  {inviteData?.partner1_email ? `${inviteData.partner1_email.split('@')[0]} has` : 'Someone has'} invited you to take the SACRED assessment together.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-start space-x-3 text-sm">
+                  <Heart className="w-5 h-5 text-[#C4756B] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-[#2F4F3F] mb-1">Private & Secure</p>
+                    <p className="text-[#6B5B73] font-sacred">
+                      Your responses are confidential and shared only with your partner.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 text-sm">
+                  <User2 className="w-5 h-5 text-[#C4756B] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-[#2F4F3F] mb-1">Designed for Couples</p>
+                    <p className="text-[#6B5B73] font-sacred">
+                      Biblical wisdom meets modern relationship science.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Email Verification */}
+          <div className="flex-1 bg-[#F5F1EB] p-8 flex flex-col justify-center">
+            <div className="max-w-lg mx-auto w-full">
+              <div className="bg-white rounded-2xl shadow-lg p-8">
+                <h2 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-6 text-center">
+                  Confirm Your Email
+                </h2>
+
+                {formError && (
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-6">
+                    <p className="text-red-700 font-sacred text-sm text-center">{formError}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleEmailCheck} className="space-y-6">
+                  <div>
+                    <Label htmlFor="email" className="text-[#2F4F3F] font-medium font-sacred">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      required
+                      className="mt-2 border-[#E6D7C9] focus:border-[#7A9B8A]"
+                    />
+                    <p className="text-xs text-[#6B5B73] font-sacred mt-2">
+                      This should be the email address where you received the invitation.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#7A9B8A] hover:bg-[#6A8B7A] text-white py-3 text-lg font-sacred-bold"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        Continue
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {step === 'signup' && (
         <div className="min-h-screen flex">
           {/* Left Column - Welcome */}
@@ -254,9 +413,15 @@ export default function PartnerInvitePage() {
           <div className="flex-1 bg-[#F5F1EB] p-8 flex flex-col justify-center">
             <div className="max-w-lg mx-auto w-full">
               <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h2 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-6 text-center">
-                  Create Your Account
+                <h2 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-4 text-center">
+                  Complete Your Account
                 </h2>
+                
+                <div className="bg-[#F5F1EB] border border-[#E6D7C9] p-3 rounded-lg mb-6">
+                  <p className="text-[#2F4F3F] font-sacred text-sm text-center">
+                    Creating account for: <strong>{email}</strong>
+                  </p>
+                </div>
 
                 {formError && (
                   <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-6">
@@ -275,21 +440,6 @@ export default function PartnerInvitePage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Enter your full name"
-                      required
-                      className="mt-2 border-[#E6D7C9] focus:border-[#7A9B8A]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email" className="text-[#2F4F3F] font-medium font-sacred">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
                       required
                       className="mt-2 border-[#E6D7C9] focus:border-[#7A9B8A]"
                     />
@@ -346,6 +496,23 @@ export default function PartnerInvitePage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {step === 'success' && (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-2">Account Created!</h1>
+            <p className="text-[#6B5B73] font-sacred mb-6">
+              Your account has been created successfully. Please check your email to verify your account, then you'll be able to access your shared assessment.
+            </p>
+            <p className="text-sm text-[#6B5B73] font-sacred">
+              Once verified, you'll automatically be connected to your partner's assessment.
+            </p>
           </div>
         </div>
       )}

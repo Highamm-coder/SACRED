@@ -20,3 +20,6 @@ export function getSiteUrl() {
     // Server-side fallback (shouldn't happen in this app but good practice)
     return 'https://www.sacredonline.co';
 }
+
+// Re-export partner utilities for centralized access
+export * from './partnerUtils.js';

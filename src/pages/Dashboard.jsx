@@ -11,6 +11,7 @@ import AuthWrapper from '../components/auth/AuthWrapper';
 import InviteLinkModal from '../components/invite/InviteLinkModal';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import { getPartnerName } from '@/utils';
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -177,19 +178,7 @@ export default function DashboardPage() {
     }
   };
 
-  const getPartnerName = (assessment) => {
-    console.log('🤝 getPartnerName() - User:', user?.email, 'Partner1:', assessment.partner1_email, 'Partner2:', assessment.partner2_email);
-    
-    if (user && user.email === assessment.partner1_email) {
-      // Current user is Partner 1, so their partner is Partner 2
-      console.log('👤 User is Partner 1, returning Partner 2 name:', assessment.partner2_name);
-      return assessment.partner2_name || 'Your Partner';
-    } else {
-      // Current user is Partner 2, so their partner is Partner 1  
-      console.log('👤 User is Partner 2, returning Partner 1 name:', assessment.partner1_name);
-      return assessment.partner1_name || 'Your Partner';
-    }
-  };
+  // Partner name logic moved to centralized utility
   
   const getActions = (assessment) => {
     const actions = [];
@@ -227,8 +216,13 @@ export default function DashboardPage() {
   // Determine user's display name
   const userDisplayName = user?.full_name?.split(' ')[0] || 'Friend';
   
-  // Only define statusInfo if an assessment exists
-  const statusInfo = assessment ? getStatusInfo(assessment.status) : null;
+  // Define statusInfo with safe fallback
+  const statusInfo = assessment ? getStatusInfo(assessment.status) : {
+    text: 'Not Available',
+    icon: AlertCircle,
+    color: 'text-gray-500',
+    bgColor: 'bg-gray-50 border-gray-200'
+  };
 
   return (
     <AuthWrapper requireAuth={true}>
@@ -349,72 +343,89 @@ export default function DashboardPage() {
                           Your Journey
                         </CardTitle>
                         <CardDescription className="font-sacred text-[#6B5B73]">
-                          Assessment with {getPartnerName(assessment)}
+                          Assessment with {assessment ? getPartnerName(assessment, user) || 'Your Partner' : 'Your Partner'}
                         </CardDescription>
                       </div>
                     </div>
-                    <div className={`px-3 py-2 rounded-full border ${statusInfo.bgColor} flex items-center gap-2 w-fit`}>
-                      {React.createElement(statusInfo.icon, { className: `w-4 h-4 ${statusInfo.color}` })}
-                      <span className={`text-sm font-medium ${statusInfo.color} font-sacred`}>
-                        {statusInfo.text}
-                      </span>
-                    </div>
+                    {assessment && (
+                      <div className={`px-3 py-2 rounded-full border ${statusInfo.bgColor} flex items-center gap-2 w-fit`}>
+                        {React.createElement(statusInfo.icon, { 
+                          className: `w-4 h-4 ${statusInfo.color}`,
+                          'aria-label': `Status: ${statusInfo.text}`
+                        })}
+                        <span className={`text-sm font-medium ${statusInfo.color} font-sacred`}>
+                          {statusInfo.text}
+                        </span>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <p className="text-sm text-[#6B5B73] font-sacred">
-                        Started on {format(new Date(assessment.created_date), 'MMM d, yyyy')}
-                      </p>
-                      
-                      {/* Partner Status */}
-                      {assessment.partner2_email && (
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Users className="w-4 h-4 text-gray-500" />
-                            <p className="text-sm font-medium text-gray-700 font-sacred">Partner Status</p>
-                          </div>
-                          <p className="text-sm text-gray-600 font-sacred">
-                            {assessment.partner2_has_accessed 
-                              ? `${getPartnerName(assessment)} has accessed the assessment${assessment.partner2_last_login ? ` (last seen ${format(new Date(assessment.partner2_last_login), 'MMM d')})` : ''}`
-                              : `Invitation sent to ${getPartnerName(assessment)} - waiting for them to access the assessment`
-                            }
-                          </p>
-                          {!assessment.partner2_has_accessed && (
-                            <div className="flex gap-2 mt-2">
-                              <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowInviteModal(true)}>
-                                Resend Invite
-                              </Button>
+                    {assessment ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-[#6B5B73] font-sacred">
+                          Started on {format(new Date(assessment.created_date), 'MMM d, yyyy')}
+                        </p>
+                        
+                        {/* Partner Status - Enhanced Logic */}
+                        {assessment.partner2_email && (
+                          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                              <p className="text-sm font-medium text-gray-700 font-sacred">Partner Status</p>
                             </div>
-                          )}
-                        </div>
-                      )}
+                            <p className="text-sm text-gray-600 font-sacred">
+                              {assessment.partner2_has_accessed 
+                                ? `${getPartnerName(assessment, user) || 'Your Partner'} has accessed the assessment${assessment.partner2_last_login ? ` (last seen ${format(new Date(assessment.partner2_last_login), 'MMM d')})` : ''}`
+                                : `Invitation sent to ${getPartnerName(assessment, user) || 'Your Partner'} - waiting for them to access the assessment`
+                              }
+                            </p>
+                            {!assessment.partner2_has_accessed && (
+                              <div className="flex gap-2 mt-2">
+                                <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowInviteModal(true)}>
+                                  Resend Invite
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                      {assessment.status === 'completed' ? (
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                            <p className="font-medium text-green-800 font-sacred">Assessment Complete!</p>
+                        {assessment.status === 'completed' ? (
+                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="w-5 h-5 text-green-600" aria-label="Completed" />
+                              <p className="font-medium text-green-800 font-sacred">Assessment Complete!</p>
+                            </div>
+                            <p className="text-sm text-green-700 font-sacred">
+                              Both you and {getPartnerName(assessment, user) || 'Your Partner'} have completed your assessments. Your compatibility report is ready to view.
+                            </p>
                           </div>
-                          <p className="text-sm text-green-700 font-sacred">
-                            Both you and {getPartnerName(assessment)} have completed your assessments. Your compatibility report is ready to view.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Clock className="w-5 h-5 text-amber-600" />
-                            <p className="font-medium text-amber-800 font-sacred">In Progress</p>
+                        ) : (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Clock className="w-5 h-5 text-amber-600" aria-label="In Progress" />
+                              <p className="font-medium text-amber-800 font-sacred">In Progress</p>
+                            </div>
+                            <p className="text-sm text-amber-700 font-sacred">
+                              {(assessment.status === 'partner1_completed' && user && user.email === assessment.partner1_email) ||
+                               (assessment.status === 'partner2_completed' && user && user.email === assessment.partner2_email)
+                                ? `Waiting for ${getPartnerName(assessment, user) || 'Your Partner'} to complete their assessment.`
+                                : 'Continue where you left off to complete your part of the assessment.'
+                              }
+                            </p>
                           </div>
-                          <p className="text-sm text-amber-700 font-sacred">
-                            {(assessment.status === 'partner1_completed' && user && user.email === assessment.partner1_email) ||
-                             (assessment.status === 'partner2_completed' && user && user.email === assessment.partner2_email)
-                              ? `Waiting for ${getPartnerName(assessment)} to complete their assessment.`
-                              : 'Continue where you left off to complete your part of the assessment.'
-                            }
-                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-gray-500" aria-label="No Assessment" />
+                          <p className="font-medium text-gray-700 font-sacred">No Assessment Available</p>
                         </div>
-                      )}
-                    </div>
+                        <p className="text-sm text-gray-600 font-sacred">
+                          Complete onboarding to start your assessment journey.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
