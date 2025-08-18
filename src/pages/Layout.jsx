@@ -32,8 +32,13 @@ export default function Layout({ children, currentPageName }) {
       const urlHash = window.location.hash;
       
       // Supabase adds #access_token=... after email verification
-      if (urlHash.includes('access_token') && currentPageName === 'Home') {
-        console.log('User appears to have just verified email, checking for partner invite tokens...');
+      console.log('Layout checkUser - URL hash:', urlHash, 'Current page:', currentPageName);
+      console.log('Layout checkUser - Full URL:', window.location.href);
+      
+      // Check both Home page and any page with access_token (in case they land elsewhere)
+      if (urlHash.includes('access_token')) {
+        console.log('🔑 Detected access_token in URL hash, checking for partner invite...');
+        console.log('✅ User appears to have just verified email, checking for partner invite tokens...');
         
         // Check if this user has any pending partner invite tokens
         try {
@@ -55,7 +60,19 @@ export default function Layout({ children, currentPageName }) {
           if (!tokens || tokens.length === 0) {
             // Check localStorage for stored token from the signup process
             const storedToken = localStorage.getItem('partnerInviteToken');
+            console.log('🔍 Stored token in localStorage:', storedToken);
+            
             if (storedToken) {
+              // First check what token exists (any status)
+              const { data: allTokenData } = await supabase
+                .from('partner_invite_tokens')
+                .select('*')
+                .eq('token', storedToken)
+                .limit(1);
+              
+              console.log('🔍 Found stored token data (any status):', allTokenData);
+              
+              // Then check for pending only
               const { data: storedTokenData } = await supabase
                 .from('partner_invite_tokens')
                 .select('*')
@@ -63,29 +80,40 @@ export default function Layout({ children, currentPageName }) {
                 .eq('status', 'pending')
                 .limit(1);
               
+              console.log('🔍 Found pending stored token data:', storedTokenData);
+              
               if (storedTokenData && storedTokenData.length > 0) {
                 tokens = storedTokenData;
                 localStorage.removeItem('partnerInviteToken'); // Clean up
+                console.log('✅ Using stored token for processing');
               }
             }
           }
           
           if (tokens && tokens.length > 0) {
             const token = tokens[0];
-            console.log('Found pending partner invite token, processing...');
+            console.log('🎯 Found pending partner invite token, processing...', token);
             
-            // Process the invite token
-            await PartnerInvite.useInviteToken(token.token, currentUser.email);
-            
-            // Mark user as paid and onboarding complete
-            await User.update(currentUser.id, { 
-              onboarding_completed: true,
-              has_paid: true
-            });
-            
-            console.log('Partner 2 invite processed successfully, redirecting to Dashboard...');
-            navigate(createPageUrl('Dashboard'));
-            return;
+            try {
+              // Process the invite token
+              await PartnerInvite.useInviteToken(token.token, currentUser.email);
+              console.log('✅ Invite token processed successfully');
+              
+              // Mark user as paid and onboarding complete
+              const updateResult = await User.update(currentUser.id, { 
+                onboarding_completed: true,
+                has_paid: true
+              });
+              console.log('✅ User updated with paid/onboarding flags:', updateResult);
+              
+              console.log('🔄 Redirecting to Dashboard...');
+              navigate(createPageUrl('Dashboard'));
+              return;
+            } catch (processError) {
+              console.error('❌ Error processing partner invite:', processError);
+            }
+          } else {
+            console.log('❌ No pending tokens found for user');
           }
         } catch (err) {
           console.log('No partner invite context found or processing failed:', err);
