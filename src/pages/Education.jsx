@@ -102,7 +102,24 @@ export default function EducationPage() {
         </div>
         
         {/* Blog Posts Grid */}
-        {filteredPosts.length === 0 ? (
+        {allPosts.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-[#C4756B]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-12 h-12 bg-[#C4756B]/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">📚</span>
+                </div>
+              </div>
+              <h3 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-4">Coming Soon</h3>
+              <p className="text-[#6B5B73] font-sacred text-lg mb-6">
+                We're carefully crafting thoughtful articles to help you prepare for the beautiful gift of marital intimacy.
+              </p>
+              <p className="text-[#6B5B73] font-sacred">
+                Check back soon for biblical wisdom and practical guidance.
+              </p>
+            </div>
+          </div>
+        ) : filteredPosts.length === 0 ? (
           <div className="text-center py-12">
              <p className="text-gray-500 font-sacred">No articles found in this category.</p>
           </div>

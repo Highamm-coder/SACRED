@@ -104,6 +104,23 @@ export default function ShopPage() {
           <div className="flex justify-center items-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-[#2F4F3F]" />
           </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-[#7A9B8A]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-12 h-12 bg-[#7A9B8A]/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🛍️</span>
+                </div>
+              </div>
+              <h3 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-4">Coming Soon</h3>
+              <p className="text-[#6B5B73] font-sacred text-lg mb-6">
+                We're curating a thoughtful collection of resources to enrich your sacred journey together.
+              </p>
+              <p className="text-[#6B5B73] font-sacred">
+                Beautiful books, meaningful gifts, and tools for deeper intimacy are on the way.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="space-y-16">
             {/* Featured Section */}
