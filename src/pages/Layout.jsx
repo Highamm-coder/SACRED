@@ -35,59 +35,46 @@ export default function Layout({ children, currentPageName }) {
       console.log('Layout checkUser - URL hash:', urlHash, 'Current page:', currentPageName);
       console.log('Layout checkUser - Full URL:', window.location.href);
       
-      // Check both Home page and any page with access_token (in case they land elsewhere)
-      if (urlHash.includes('access_token')) {
-        console.log('🔑 Detected access_token in URL hash, checking for partner invite...');
-        console.log('✅ User appears to have just verified email, checking for partner invite tokens...');
+      // Check if there's a stored partner invite token (regardless of URL hash)
+      // This handles cases where email verification doesn't preserve the hash
+      const storedToken = localStorage.getItem('partnerInviteToken');
+      
+      if (storedToken && currentUser) {
+        console.log('🔑 Found stored partner invite token and authenticated user, processing...');
+        console.log('✅ Processing partner invite for authenticated user...');
         
-        // Check if this user has any pending partner invite tokens
+        // Process the stored partner invite token
         try {
           // Import PartnerInvite service and User service
           const { PartnerInvite } = await import('@/api/services/partnerInvite');
           const { User } = await import('@/api/entities');
           
-          // Query the database for any unused tokens where user might be the intended partner2
-          // First check if there are tokens with this email already set as partner2
-          let { data: tokens } = await supabase
+          console.log('🔍 Stored token in localStorage:', storedToken);
+          
+          // Check what token exists (any status)
+          const { data: allTokenData } = await supabase
             .from('partner_invite_tokens')
             .select('*')
-            .eq('partner2_email', currentUser.email)
+            .eq('token', storedToken)
+            .limit(1);
+          
+          console.log('🔍 Found stored token data (any status):', allTokenData);
+          
+          // Check for pending only
+          const { data: storedTokenData } = await supabase
+            .from('partner_invite_tokens')
+            .select('*')
+            .eq('token', storedToken)
             .eq('status', 'pending')
             .limit(1);
           
-          // If no tokens with partner2_email set, check if there are any pending tokens
-          // This handles the case where the token was created but partner2_email isn't set yet
-          if (!tokens || tokens.length === 0) {
-            // Check localStorage for stored token from the signup process
-            const storedToken = localStorage.getItem('partnerInviteToken');
-            console.log('🔍 Stored token in localStorage:', storedToken);
-            
-            if (storedToken) {
-              // First check what token exists (any status)
-              const { data: allTokenData } = await supabase
-                .from('partner_invite_tokens')
-                .select('*')
-                .eq('token', storedToken)
-                .limit(1);
-              
-              console.log('🔍 Found stored token data (any status):', allTokenData);
-              
-              // Then check for pending only
-              const { data: storedTokenData } = await supabase
-                .from('partner_invite_tokens')
-                .select('*')
-                .eq('token', storedToken)
-                .eq('status', 'pending')
-                .limit(1);
-              
-              console.log('🔍 Found pending stored token data:', storedTokenData);
-              
-              if (storedTokenData && storedTokenData.length > 0) {
-                tokens = storedTokenData;
-                localStorage.removeItem('partnerInviteToken'); // Clean up
-                console.log('✅ Using stored token for processing');
-              }
-            }
+          console.log('🔍 Found pending stored token data:', storedTokenData);
+          
+          let tokens = null;
+          if (storedTokenData && storedTokenData.length > 0) {
+            tokens = storedTokenData;
+            localStorage.removeItem('partnerInviteToken'); // Clean up
+            console.log('✅ Using stored token for processing');
           }
           
           if (tokens && tokens.length > 0) {
