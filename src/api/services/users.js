@@ -42,28 +42,19 @@ export const User = {
   async signUp(email, password, userData = {}) {
     console.log('Attempting signup with:', { email, password: '***', userData });
     
-    // Extract emailRedirectTo and skipEmailVerification from userData
-    const { emailRedirectTo, skipEmailVerification, ...userMetadata } = userData;
+    // Extract emailRedirectTo from userData if provided, otherwise use default
+    const { emailRedirectTo, ...userMetadata } = userData;
     const redirectUrl = emailRedirectTo || getSiteUrl();
     
-    console.log('SignUp with options:', { emailRedirectTo: redirectUrl, skipEmailVerification });
-    
-    const signupOptions = {
-      data: userMetadata,
-      emailRedirectTo: redirectUrl
-    };
-    
-    // If skipEmailVerification is true, don't send confirmation email
-    if (skipEmailVerification) {
-      signupOptions.emailRedirectTo = undefined;
-      // Note: Supabase doesn't have a direct way to skip email verification
-      // This will still require verification, but we'll handle it differently
-    }
+    console.log('SignUp with emailRedirectTo:', redirectUrl);
     
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: signupOptions
+      options: {
+        data: userMetadata,
+        emailRedirectTo: redirectUrl
+      }
     });
     
     console.log('Signup response:', { data, error });

@@ -125,16 +125,17 @@ export default function PartnerInvitePage() {
     setIsSubmitting(true);
 
     try {
-      // Create account without email verification for Partner 2 (invited users)
+      // Create account for Partner 2 (invited users)
       const signupResult = await User.signUp(email, password, { 
-        full_name: fullName,
-        skipEmailVerification: true
+        full_name: fullName
       });
       
-      // For Partner 2 (invited users), we process immediately regardless of verification status
-      // Since they're invited by a paying user, we can trust the signup
-      try {
-        // Process invite and mark onboarding as completed for Partner 2
+      console.log('Signup result:', signupResult);
+      
+      // Check if user was successfully created and authenticated immediately
+      if (signupResult.user && signupResult.session) {
+        // User is immediately authenticated, process the invite
+        console.log('User immediately authenticated, processing invite...');
         await PartnerInvite.useInviteToken(token, email);
         
         // Mark onboarding as completed and paid since Partner 2 doesn't need full onboarding or payment
@@ -146,9 +147,12 @@ export default function PartnerInvitePage() {
         
         // Navigate directly to Dashboard
         navigate(createPageUrl('Dashboard'));
-      } catch (tokenError) {
-        console.error('Token processing error:', tokenError);
-        setFormError('Failed to process invite. Please try again.');
+      } else if (signupResult.user && !signupResult.session) {
+        // User created but not authenticated yet (needs email verification)
+        console.log('User needs email verification');
+        setStep('verify-email');
+      } else {
+        throw new Error('Signup failed - no user created');
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -337,6 +341,23 @@ export default function PartnerInvitePage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {step === 'verify-email' && (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-2">Check Your Email</h1>
+            <p className="text-[#6B5B73] font-sacred mb-6">
+              We've sent you a verification email. Please click the link in the email to verify your account, then return here.
+            </p>
+            <p className="text-sm text-[#6B5B73] font-sacred">
+              Once verified, you'll automatically be connected to your partner's assessment.
+            </p>
           </div>
         </div>
       )}
