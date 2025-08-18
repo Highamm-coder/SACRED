@@ -100,11 +100,56 @@ export default function Layout({ children, currentPageName }) {
               console.log('✅ Invite token processed successfully');
               
               // Mark user as paid and onboarding complete
-              const updateResult = await User.update(currentUser.id, { 
-                onboarding_completed: true,
-                has_paid: true
-              });
-              console.log('✅ User updated with paid/onboarding flags:', updateResult);
+              // First ensure the profile exists
+              try {
+                console.log('📝 Ensuring user profile exists before updating...');
+                const profileCheck = await supabase
+                  .from('profiles')
+                  .select('id')
+                  .eq('id', currentUser.id)
+                  .single();
+                
+                console.log('Profile check result:', profileCheck);
+                
+                if (profileCheck.error && profileCheck.error.code === 'PGRST116') {
+                  // Profile doesn't exist, create it first
+                  console.log('📝 Creating profile for user...');
+                  await User.createProfile(currentUser.id, {
+                    email: currentUser.email,
+                    full_name: currentUser.user_metadata?.full_name || '',
+                    role: 'user',
+                    is_active: true,
+                    has_paid: true,
+                    onboarding_completed: true
+                  });
+                  console.log('✅ Profile created with paid/onboarding flags');
+                } else {
+                  // Profile exists, update it
+                  console.log('📝 Updating existing profile...');
+                  const updateResult = await User.update(currentUser.id, { 
+                    onboarding_completed: true,
+                    has_paid: true
+                  });
+                  console.log('✅ User updated with paid/onboarding flags:', updateResult);
+                }
+              } catch (profileError) {
+                console.error('❌ Error with profile creation/update:', profileError);
+                // Try direct database update as fallback
+                const { data: directUpdate, error: directError } = await supabase
+                  .from('profiles')
+                  .upsert({
+                    id: currentUser.id,
+                    email: currentUser.email,
+                    full_name: currentUser.user_metadata?.full_name || '',
+                    role: 'user',
+                    is_active: true,
+                    has_paid: true,
+                    onboarding_completed: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  });
+                console.log('🔄 Direct database upsert result:', { directUpdate, directError });
+              }
               
               console.log('🔄 Redirecting to Dashboard...');
               navigate(createPageUrl('Dashboard'));
