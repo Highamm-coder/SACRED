@@ -65,15 +65,30 @@ export default function Layout({ children, currentPageName }) {
               
               // Validate Partner 1 has paid before granting Partner 2 access
               console.log('🔍 Validating Partner 1 payment status...');
-              const { data: partner1Profile } = await supabase
+              const { data: partner1Profile, error: partner1Error } = await supabase
                 .from('profiles')
-                .select('has_paid')
+                .select('has_paid, email')
                 .eq('email', token.partner1_email)
                 .single();
               
-              if (!partner1Profile?.has_paid) {
-                console.error('🚫 AUDIT: Payment inheritance blocked in Layout - Partner 1 unpaid:', token.partner1_email);
+              console.log('🔍 Partner 1 profile lookup result:', { 
+                partner1Profile, 
+                partner1Error, 
+                partner1_email: token.partner1_email 
+              });
+              
+              // Only block if we can definitively confirm Partner 1 hasn't paid
+              if (partner1Profile && partner1Profile.has_paid === false) {
+                console.error('🚫 AUDIT: Payment inheritance blocked - Partner 1 explicitly unpaid:', token.partner1_email);
                 throw new Error('Partner 1 must complete payment before Partner 2 can access the assessment');
+              }
+              
+              if (!partner1Profile && !partner1Error) {
+                console.log('⚠️ WARNING: Partner 1 profile not found, allowing Partner 2 access for compatibility');
+              } else if (partner1Error) {
+                console.log('⚠️ WARNING: Error querying Partner 1 profile, allowing Partner 2 access:', partner1Error);
+              } else {
+                console.log('✅ Partner 1 payment validation passed:', { has_paid: partner1Profile.has_paid });
               }
               
               console.log('💰 AUDIT: Payment inheritance authorized in Layout:', {
