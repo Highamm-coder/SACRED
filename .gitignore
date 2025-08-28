@@ -24,3 +24,19 @@ dist-ssr
 *.sw?
 
 .env
+
+# SQL migration files and development artifacts
+SQL MD/
+*.sql
+.claude/
+.mcp.json
+runMigration.js
+cms-test-script.js
+fix-database-schema.js
+
+# Image assets and temporary files
+*.jpg
+*.jpeg
+*.png
+*.webp
+supabase/.temp/
