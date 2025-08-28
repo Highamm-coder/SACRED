@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { sendInviteEmail } from '@/api/functions';
 import { Loader2, Mail, Check, AlertCircle } from 'lucide-react';
 
-export default function SendInviteModal({ isOpen, onClose, assessment, inviteLink }) {
+export default function SendInviteModal({ isOpen, onClose, assessment, inviteLink, onInviteSent }) {
   const [customMessage, setCustomMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState(null); // 'success', 'error', or null
@@ -32,6 +32,10 @@ export default function SendInviteModal({ isOpen, onClose, assessment, inviteLin
       
       if (response.data?.success) {
         setStatus('success');
+        // Call the callback to refresh assessment data
+        if (onInviteSent) {
+          onInviteSent();
+        }
         setTimeout(() => {
           onClose();
           setStatus(null);

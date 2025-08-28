@@ -8,7 +8,7 @@ import SendInviteModal from './SendInviteModal';
 import { getSiteUrl } from '@/utils';
 import { PartnerInvite, User } from '@/api/entities';
 
-export default function InviteLinkModal({ isOpen, onClose, assessment }) {
+export default function InviteLinkModal({ isOpen, onClose, assessment, onInviteSent }) {
   const [copied, setCopied] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
@@ -127,6 +127,7 @@ export default function InviteLinkModal({ isOpen, onClose, assessment }) {
         onClose={() => setShowSendModal(false)}
         assessment={assessment}
         inviteLink={inviteLink}
+        onInviteSent={onInviteSent}
       />
     </>
   );

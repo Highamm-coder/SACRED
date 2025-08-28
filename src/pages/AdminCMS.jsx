@@ -18,27 +18,27 @@ import {
   Layout,
   TrendingUp,
   UserCheck,
-  DollarSign
+  DollarSign,
+  Heart
 } from 'lucide-react';
 import { 
-  blogPostService, 
   educationResourceService, 
   productRecommendationService,
+  reflectionQuestionsService,
   userManagementService,
   analyticsService,
   requireAdmin
 } from '@/api/services/cms';
+import { assessmentService } from '@/api/entities';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 // Individual CMS Section Components
-import BlogManagement from '@/components/cms/BlogManagement';
 import ResourceManagement from '@/components/cms/ResourceManagement';
 import ProductManagement from '@/components/cms/ProductManagement';
+import ReflectionManagement from '@/components/cms/ReflectionManagement';
 import UserManagement from '@/components/cms/UserManagement';
 import MediaManagement from '@/components/cms/MediaManagement';
-import AnalyticsDashboard from '@/components/cms/AnalyticsDashboard';
-import PageContentManagement from '@/components/cms/PageContentManagement';
 import AssessmentManagement from '@/components/cms/AssessmentManagement';
 
 export default function AdminCMS() {
@@ -118,7 +118,7 @@ export default function AdminCMS() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-7 bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Dashboard
@@ -127,17 +127,17 @@ export default function AdminCMS() {
               <Settings className="w-4 h-4" />
               Assessment
             </TabsTrigger>
-            <TabsTrigger value="blog" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Blog
+            <TabsTrigger value="reflections" className="flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              Reflections
             </TabsTrigger>
             <TabsTrigger value="resources" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Resources
+              Education
             </TabsTrigger>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4" />
-              Products
+              Shop
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -147,14 +147,6 @@ export default function AdminCMS() {
               <Image className="w-4 h-4" />
               Media
             </TabsTrigger>
-            <TabsTrigger value="pages" className="flex items-center gap-2">
-              <Layout className="w-4 h-4" />
-              Pages
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Analytics
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -162,29 +154,7 @@ export default function AdminCMS() {
               {/* Content Stats */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-sacred text-[#6B5B73]">Blog Posts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="text-2xl font-sacred-bold text-[#2F4F3F]">
-                      {(dashboardStats.blog?.published || 0) + (dashboardStats.blog?.draft || 0)}
-                    </div>
-                    <FileText className="w-5 h-5 text-[#C4756B]" />
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {dashboardStats.blog?.published || 0} Published
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {dashboardStats.blog?.draft || 0} Draft
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-sacred text-[#6B5B73]">Resources</CardTitle>
+                  <CardTitle className="text-sm font-sacred text-[#6B5B73]">Education Resources</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
@@ -199,6 +169,25 @@ export default function AdminCMS() {
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {dashboardStats.resources?.draft || 0} Draft
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-sacred text-[#6B5B73]">Shop Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-sacred-bold text-[#2F4F3F]">
+                      {(dashboardStats.products?.active || 0)}
+                    </div>
+                    <ShoppingBag className="w-5 h-5 text-[#C4756B]" />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {dashboardStats.products?.active || 0} Active
                     </Badge>
                   </div>
                 </CardContent>
@@ -259,18 +248,18 @@ export default function AdminCMS() {
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"
-                    onClick={() => setActiveTab('blog')}
+                    onClick={() => setActiveTab('resources')}
                   >
-                    <Plus className="w-5 h-5" />
-                    <span className="text-sm">New Blog Post</span>
+                    <BookOpen className="w-5 h-5" />
+                    <span className="text-sm">New Education Resource</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"
-                    onClick={() => setActiveTab('resources')}
+                    onClick={() => setActiveTab('products')}
                   >
-                    <BookOpen className="w-5 h-5" />
-                    <span className="text-sm">New Resource</span>
+                    <ShoppingBag className="w-5 h-5" />
+                    <span className="text-sm">New Shop Product</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -312,8 +301,8 @@ export default function AdminCMS() {
             <AssessmentManagement />
           </TabsContent>
 
-          <TabsContent value="blog">
-            <BlogManagement />
+          <TabsContent value="reflections">
+            <ReflectionManagement />
           </TabsContent>
 
           <TabsContent value="resources">
@@ -330,14 +319,6 @@ export default function AdminCMS() {
 
           <TabsContent value="media">
             <MediaManagement />
-          </TabsContent>
-
-          <TabsContent value="pages">
-            <PageContentManagement />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <AnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>

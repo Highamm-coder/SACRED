@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { 
   Select,
@@ -35,11 +36,11 @@ import { blogPostService } from '@/api/services/cms';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function BlogManagement() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [editingPost, setEditingPost] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Form state
@@ -184,12 +185,13 @@ export default function BlogManagement() {
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} className="bg-[#C4756B] hover:bg-[#B86761]">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Post
-                </Button>
-              </DialogTrigger>
+              <Button 
+                onClick={() => navigate('/BlogEditor')} 
+                className="bg-[#C4756B] hover:bg-[#B86761]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Post
+              </Button>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-sacred text-[#2F4F3F]">
@@ -223,23 +225,24 @@ export default function BlogManagement() {
 
                   <div className="space-y-2">
                     <Label className="font-sacred text-[#2F4F3F]">Excerpt</Label>
-                    <Textarea
+                    <RichTextEditor
                       value={formData.excerpt}
-                      onChange={(e) => handleInputChange('excerpt', e.target.value)}
-                      placeholder="Brief description of the post"
-                      rows={2}
+                      onChange={(value) => handleInputChange('excerpt', value)}
+                      placeholder="Brief description or summary of the post..."
+                      height="100px"
                     />
+                    <p className="text-xs text-[#6B5B73] font-sacred">Short excerpt that appears in blog listings and previews</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label className="font-sacred text-[#2F4F3F]">Content *</Label>
-                    <Textarea
+                    <RichTextEditor
                       value={formData.content}
-                      onChange={(e) => handleInputChange('content', e.target.value)}
-                      placeholder="Blog post content (HTML supported)"
-                      rows={10}
-                      required
+                      onChange={(value) => handleInputChange('content', value)}
+                      placeholder="Write your blog post content here. Use the formatting toolbar to add headings, lists, bold text, images, and more..."
+                      height="400px"
                     />
+                    <p className="text-xs text-[#6B5B73] font-sacred">Use the toolbar to format your text with headings, bold, italic, lists, and more</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -409,7 +412,7 @@ export default function BlogManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEdit(post)}
+                        onClick={() => navigate(`/BlogEditor?id=${post.id}`)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>

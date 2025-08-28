@@ -276,6 +276,102 @@ export class AssessmentService {
     return data || [];
   }
 
+  // Misalignment Discussion Management
+  async getMisalignments(assessmentId) {
+    const { data, error } = await supabase
+      .from('misalignment_discussions')
+      .select('*')
+      .eq('assessment_id', assessmentId)
+      .order('created_at');
+    
+    handleSupabaseError(error);
+    return data || [];
+  }
+
+  async createMisalignment(misalignmentData) {
+    const { data, error } = await supabase
+      .from('misalignment_discussions')
+      .insert({
+        ...misalignmentData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    handleSupabaseError(error);
+    return data;
+  }
+
+  async updateMisalignment(id, updates) {
+    const { data, error } = await supabase
+      .from('misalignment_discussions')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    handleSupabaseError(error);
+    return data;
+  }
+
+  async markMisalignmentDiscussed(id, notes = null) {
+    return this.updateMisalignment(id, {
+      is_discussed: true,
+      discussed_at: new Date().toISOString(),
+      notes
+    });
+  }
+
+  async findCoupleMisalignments(assessmentId) {
+    // Query to find all questions where partners gave different answers
+    const { data, error } = await supabase.rpc('find_couple_misalignments', {
+      p_assessment_id: assessmentId
+    });
+    
+    if (error) {
+      console.error('Error finding misalignments:', error);
+      // Fallback: return empty array if RPC function doesn't exist
+      return [];
+    }
+    
+    return data || [];
+  }
+
+  async generateMisalignmentDiscussions(assessmentId) {
+    const misalignments = await this.findCoupleMisalignments(assessmentId);
+    
+    const discussions = await Promise.all(
+      misalignments.map(async (misalignment) => {
+        // Check if discussion already exists
+        const existing = await supabase
+          .from('misalignment_discussions')
+          .select('id')
+          .eq('assessment_id', assessmentId)
+          .eq('question_id', misalignment.question_id)
+          .single();
+        
+        if (!existing.data) {
+          // Create new misalignment discussion
+          return this.createMisalignment({
+            assessment_id: assessmentId,
+            question_id: misalignment.question_id,
+            partner1_answer: misalignment.partner1_answer,
+            partner2_answer: misalignment.partner2_answer,
+            discussion_question: misalignment.discussion_question
+          });
+        }
+        
+        return existing.data;
+      })
+    );
+    
+    return discussions.filter(d => d); // Remove any nulls
+  }
+
   // Utility Methods
   async getAssessmentStats() {
     const [sections, questions, interpretations] = await Promise.all([
@@ -290,7 +386,8 @@ export class AssessmentService {
       questions: questions.length,
       activeQuestions: questions.filter(q => q.is_active).length,
       interpretations: interpretations.length,
-      questionsBySection: {}
+      questionsBySection: {},
+      questionsWithDiscussion: questions.filter(q => q.discussion_question).length
     };
 
     // Group questions by section

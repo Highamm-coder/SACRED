@@ -2,22 +2,23 @@
 // This file provides the same interface as Base44 entities but uses Supabase
 
 // Core assessment entities
-export { Question } from './services/questions';
-export { CoupleAssessment } from './services/assessments';
+export { Question, assessmentService } from './services/assessment';
+export { Assessment, CoupleAssessment } from './services/singleAssessments'; // CoupleAssessment is legacy alias
 export { Answer } from './services/answers';
 export { OpenEndedQuestion, OpenEndedAnswer } from './services/openEnded';
 
 // User authentication and management
 export { User } from './services/users';
 
-// Partner invite system
-export { PartnerInvite } from './services/partnerInvite';
+// Partner invite system (DEPRECATED - will be removed in single account migration)
+// export { PartnerInvite } from './services/partnerInvite';
 
 // Content entities using CMS services
 import { 
   blogPostService, 
   educationResourceService, 
-  productRecommendationService 
+  productRecommendationService,
+  reflectionQuestionsService
 } from './services/cms';
 
 export const BlogPost = {
@@ -61,6 +62,18 @@ export const Product = {
   },
   async filter(filters = {}) {
     return await productRecommendationService.list(filters);
+  }
+};
+
+export const ReflectionQuestion = {
+  async list() {
+    return await reflectionQuestionsService.listPublished();
+  },
+  async get(id) {
+    return await reflectionQuestionsService.get(id);
+  },
+  async filter(filters = {}) {
+    return await reflectionQuestionsService.list(filters);
   }
 };
 

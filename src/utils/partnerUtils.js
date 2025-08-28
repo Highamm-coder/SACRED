@@ -1,74 +1,88 @@
 /**
- * Partner Utilities - Centralized logic for partner operations
- * Created by SCUBBR during enterprise code cleanup
+ * User Utilities - Simplified utilities for single-account system
+ * Updated during migration from partner system to single-account system
  */
 
 /**
- * Get the partner's display name based on current user's role in assessment
- * @param {Object} assessment - Assessment object with partner emails and names
- * @param {Object} currentUser - Current user object with email
- * @returns {string} Partner's display name or fallback
+ * Get user's display name from assessment or user object
+ * @param {Object} assessment - Assessment object
+ * @param {Object} currentUser - Current user object with email and name
+ * @returns {string} User's display name or fallback
  */
-export const getPartnerName = (assessment, currentUser) => {
-  console.log('🤝 getPartnerName() - User:', currentUser?.email, 'Partner1:', assessment.partner1_email, 'Partner2:', assessment.partner2_email);
-  
-  if (!currentUser || !assessment) {
-    return 'Your Partner';
+export const getUserDisplayName = (assessment, currentUser) => {
+  if (!currentUser) {
+    return 'User';
   }
   
-  if (currentUser.email === assessment.partner1_email) {
-    // Current user is Partner 1, so their partner is Partner 2
-    console.log('👤 User is Partner 1, returning Partner 2 name:', assessment.partner2_name);
-    return assessment.partner2_name || 'Your Partner';
-  } else if (currentUser.email === assessment.partner2_email) {
-    // Current user is Partner 2, so their partner is Partner 1  
-    console.log('👤 User is Partner 2, returning Partner 1 name:', assessment.partner1_name);
-    return assessment.partner1_name || 'Your Partner';
-  } else {
-    // User doesn't match either partner - shouldn't happen in normal flow
-    console.warn('⚠️ User email does not match either partner in assessment');
-    return 'Your Partner';
+  // Try to get name from user profile first
+  if (currentUser.full_name) {
+    return currentUser.full_name.split(' ')[0]; // First name only
   }
+  
+  // Fallback to email username
+  if (currentUser.email) {
+    return currentUser.email.split('@')[0];
+  }
+  
+  return 'User';
 };
 
 /**
- * Determine if current user is Partner 1 in the assessment
- * @param {Object} assessment - Assessment object with partner emails
- * @param {Object} currentUser - Current user object with email
- * @returns {boolean} True if user is Partner 1
- */
-export const isPartner1 = (assessment, currentUser) => {
-  return currentUser?.email === assessment?.partner1_email;
-};
-
-/**
- * Determine if current user is Partner 2 in the assessment
- * @param {Object} assessment - Assessment object with partner emails
- * @param {Object} currentUser - Current user object with email
- * @returns {boolean} True if user is Partner 2
- */
-export const isPartner2 = (assessment, currentUser) => {
-  return currentUser?.email === assessment?.partner2_email;
-};
-
-/**
- * Get partner number (1 or 2) for current user
- * @param {Object} assessment - Assessment object with partner emails
- * @param {Object} currentUser - Current user object with email
- * @returns {number|null} 1, 2, or null if not found
- */
-export const getPartnerNumber = (assessment, currentUser) => {
-  if (isPartner1(assessment, currentUser)) return 1;
-  if (isPartner2(assessment, currentUser)) return 2;
-  return null;
-};
-
-/**
- * Validate that user has access to assessment
- * @param {Object} assessment - Assessment object with partner emails
+ * Validate that user has access to assessment (single account)
+ * @param {Object} assessment - Assessment object
  * @param {Object} currentUser - Current user object with email
  * @returns {boolean} True if user should have access
  */
 export const hasAssessmentAccess = (assessment, currentUser) => {
-  return isPartner1(assessment, currentUser) || isPartner2(assessment, currentUser);
+  if (!assessment || !currentUser) {
+    return false;
+  }
+  
+  // In single account system, user only has access to their own assessments
+  return assessment.user_email === currentUser.email || assessment.user_id === currentUser.id;
+};
+
+/**
+ * Get assessment ownership status for current user
+ * @param {Object} assessment - Assessment object
+ * @param {Object} currentUser - Current user object
+ * @returns {boolean} True if user owns this assessment
+ */
+export const isAssessmentOwner = (assessment, currentUser) => {
+  return hasAssessmentAccess(assessment, currentUser);
+};
+
+// Legacy compatibility functions - these return fallback values for backwards compatibility
+// TODO: Remove these after all components are updated to single account system
+
+/**
+ * @deprecated Use getUserDisplayName instead
+ */
+export const getPartnerName = (assessment, currentUser) => {
+  console.warn('getPartnerName is deprecated - use getUserDisplayName instead');
+  return 'Your Partner'; // Static fallback for backward compatibility
+};
+
+/**
+ * @deprecated No longer applicable in single account system
+ */
+export const isPartner1 = (assessment, currentUser) => {
+  console.warn('isPartner1 is deprecated - use isAssessmentOwner instead');
+  return isAssessmentOwner(assessment, currentUser);
+};
+
+/**
+ * @deprecated No longer applicable in single account system
+ */
+export const isPartner2 = (assessment, currentUser) => {
+  console.warn('isPartner2 is deprecated - not applicable in single account system');
+  return false;
+};
+
+/**
+ * @deprecated No longer applicable in single account system
+ */
+export const getPartnerNumber = (assessment, currentUser) => {
+  console.warn('getPartnerNumber is deprecated - not applicable in single account system');
+  return null;
 };

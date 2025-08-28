@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CoupleAssessment, User } from '@/api/entities';
-import { PartnerInvite } from '@/api/services/partnerInvite';
+// PartnerInvite service removed in single-account migration
 import { createPageUrl, getSiteUrl } from '@/utils';
 import { Copy, Check, Mail, ArrowRight, Loader2, BookOpen, Users } from 'lucide-react';
 
@@ -32,9 +32,9 @@ export default function OpenEndedInvitePage() {
         // Get current user to create invite token
         const currentUser = await User.me();
         
-        // Create invite token for this assessment
-        const inviteUrl = await PartnerInvite.createInviteLink(assessmentId, currentUser.email);
-        setInviteLink(inviteUrl);
+        // Single-account system: Generate simple sharing link
+        const sharingUrl = `${getSiteUrl()}/OpenEndedStart?shared=${assessmentId}`;
+        setInviteLink(sharingUrl);
       } catch (error) {
         console.error('Failed to load assessment or create invite:', error);
         // Show error instead of fallback to old system

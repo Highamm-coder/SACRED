@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { OpenEndedQuestion, OpenEndedAnswer, CoupleAssessment, User } from '@/api/entities';
+import { OpenEndedQuestion, OpenEndedAnswer, Assessment, User } from '@/api/entities';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
@@ -12,7 +12,8 @@ export default function OpenEndedAssessmentPage() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // Now stores only the text: { questionId: answerText }
-  const [assessment, setAssessment] = useState(null);
+  const [partner1Assessment, setPartner1Assessment] = useState(null);
+  const [partner2Assessment, setPartner2Assessment] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,39 +30,41 @@ export default function OpenEndedAssessmentPage() {
         setUser(currentUser);
 
         const urlParams = new URLSearchParams(location.search);
-        const assessmentId = urlParams.get('id');
+        const partner1Id = urlParams.get('p1');
+        const partner2Id = urlParams.get('p2');
 
-        if (!assessmentId) {
-          setError('No assessment ID provided. Please return to the dashboard.');
+        if (!partner1Id || !partner2Id) {
+          setError('Assessment IDs not provided. Please return to the dashboard.');
           return;
         }
 
-        // Load assessment details
-        const assessmentData = await CoupleAssessment.get(assessmentId);
+        // Load both assessment details
+        const partner1AssessmentData = await Assessment.get(partner1Id);
+        const partner2AssessmentData = await Assessment.get(partner2Id);
         
-        // Verify user has access to this assessment
-        if (assessmentData.partner1_email !== currentUser.email && 
-            assessmentData.partner2_email !== currentUser.email) {
-          setError('You do not have access to this assessment. Please check your dashboard for available assessments.');
+        // Verify user has access to these assessments
+        if (partner1AssessmentData.user_email !== currentUser.email || 
+            partner2AssessmentData.user_email !== currentUser.email) {
+          setError('You do not have access to these assessments. Please check your dashboard.');
           return;
         }
 
-        // Verify the core assessment is completed
-        if (assessmentData.status !== 'completed') {
-          // If the main assessment is not completed, redirect to dashboard or an appropriate page
+        // Verify both assessments are completed
+        if (partner1AssessmentData.status !== 'completed' || partner2AssessmentData.status !== 'completed') {
           navigate(createPageUrl('Dashboard'));
           return;
         }
 
-        setAssessment(assessmentData);
+        setPartner1Assessment(partner1AssessmentData);
+        setPartner2Assessment(partner2AssessmentData);
 
         // Load all open-ended questions
         const questionsData = await OpenEndedQuestion.list('order');
         setQuestions(questionsData);
 
-        // Load existing answers for this user
+        // Load existing answers for this user (using partner1 assessment ID as reference)
         const existingAnswers = await OpenEndedAnswer.filter({
-          assessmentId,
+          assessmentId: partner1Id,
           userEmail: currentUser.email
         });
 
@@ -101,16 +104,16 @@ export default function OpenEndedAssessmentPage() {
   };
 
   const handleSaveAnswer = async (answerText) => {
-    if (!assessment || !user || !questions[currentQuestionIndex]) return;
+    if (!partner1Assessment || !user || !questions[currentQuestionIndex]) return;
 
     const currentQuestion = questions[currentQuestionIndex];
     const trimmedAnswerText = answerText.trim();
     
     setIsSaving(true);
     try {
-      // Check if answer already exists for this specific user and question
+      // Check if answer already exists for this specific user and question (using partner1 ID as reference)
       const existingAnswers = await OpenEndedAnswer.filter({
-        assessmentId: assessment.id,
+        assessmentId: partner1Assessment.id,
         questionId: currentQuestion.questionId,
         userEmail: user.email
       });
@@ -123,7 +126,7 @@ export default function OpenEndedAssessmentPage() {
       } else if (trimmedAnswerText) { // Only create if there's actual text to save
         // Create new answer
         await OpenEndedAnswer.create({
-          assessmentId: assessment.id,
+          assessmentId: partner1Assessment.id,
           questionId: currentQuestion.questionId,
           userEmail: user.email,
           answerText: trimmedAnswerText
@@ -164,7 +167,7 @@ export default function OpenEndedAssessmentPage() {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       // Last question completed, navigate to report
-      navigate(createPageUrl(`OpenEndedReport?id=${assessment.id}`));
+      navigate(createPageUrl(`OpenEndedReport?p1=${partner1Assessment.id}&p2=${partner2Assessment.id}`));
     }
   };
 
@@ -176,7 +179,7 @@ export default function OpenEndedAssessmentPage() {
 
   const handleComplete = async () => {
     await handleSaveAnswer(answers[questions[currentQuestionIndex]?.questionId] || '');
-    navigate(createPageUrl(`OpenEndedReport?id=${assessment.id}`));
+    navigate(createPageUrl(`OpenEndedReport?p1=${partner1Assessment.id}&p2=${partner2Assessment.id}`));
   };
 
   if (isLoading) {

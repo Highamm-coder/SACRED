@@ -10,6 +10,32 @@ import { Loader2, Calendar, User as UserIcon, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import AuthWrapper from '../components/auth/AuthWrapper';
 
+// Helper function to strip HTML tags and get clean text
+const stripHtmlTags = (html) => {
+  if (!html) return '';
+  
+  try {
+    // Create a temporary div element to decode HTML entities
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Get the text content which automatically strips HTML tags
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Clean up any remaining whitespace
+    return textContent
+      .replace(/\s+/g, ' ')    // Replace multiple spaces with single space
+      .trim();                 // Remove leading/trailing whitespace
+  } catch (error) {
+    // Fallback: use regex-based approach
+    return html
+      .replace(/<[^>]*>/g, '')  // Remove HTML tags
+      .replace(/&[^;]+;/g, ' ') // Remove HTML entities
+      .replace(/\s+/g, ' ')     // Replace multiple spaces with single space
+      .trim();                  // Remove leading/trailing whitespace
+  }
+};
+
 export default function EducationPage() {
   const [allResources, setAllResources] = useState([]);
   const [filteredResources, setFilteredResources] = useState([]);
@@ -217,7 +243,10 @@ export default function EducationPage() {
                         </h3>
                         
                         <p className="text-[#6B5B73] font-sacred text-sm line-clamp-3">
-                          {resource.description}
+                          {(() => {
+                            const cleanText = stripHtmlTags(resource.description);
+                            return cleanText ? cleanText.substring(0, 120) + (cleanText.length > 120 ? '...' : '') : 'No description available';
+                          })()}
                         </p>
                         
                         <div className="flex items-center gap-4 text-xs text-[#6B5B73] font-sacred">

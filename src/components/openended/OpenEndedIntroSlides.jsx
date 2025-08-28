@@ -34,7 +34,7 @@ export default function OpenEndedIntroSlides({ onStart, isLoading, existingAsses
   }
 
   const partnerNames = existingAssessment ? 
-    `${existingAssessment.partner1_name} & ${existingAssessment.partner2_name || 'Partner'}` : 
+    `${existingAssessment.partner1Assessment?.metadata?.partnerName || 'Partner 1'} & ${existingAssessment.partner2Assessment?.metadata?.partnerName || 'Partner 2'}` : 
     'You & Your Partner';
 
   return (

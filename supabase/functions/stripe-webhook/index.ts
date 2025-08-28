@@ -59,7 +59,17 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        console.log('Processing completed checkout session:', session.id)
+        console.log('Processing completed checkout session:', session.id, {
+          amount_total: session.amount_total,
+          currency: session.currency,
+          payment_status: session.payment_status
+        })
+
+        // Validate that payment was successful
+        if (session.payment_status !== 'paid') {
+          console.error('Checkout session not paid:', session.id, 'Status:', session.payment_status)
+          return new Response('Payment not completed', { status: 400 })
+        }
 
         // Extract user information from metadata
         const userId = session.metadata?.user_id
@@ -70,7 +80,32 @@ serve(async (req) => {
           return new Response('No user ID in metadata', { status: 400 })
         }
 
-        // Update user's payment status
+        // Validate user exists before updating
+        const { data: existingUser, error: userError } = await supabaseClient
+          .from('profiles')
+          .select('id, has_paid, full_name, email')
+          .eq('id', userId)
+          .single()
+
+        if (userError || !existingUser) {
+          console.error('User not found for payment update:', userId, userError)
+          return new Response('User not found', { status: 404 })
+        }
+
+        // Check if user already has paid status (idempotency check)
+        if (existingUser.has_paid) {
+          console.log(`User ${userId} already has paid status - idempotent update`)
+          return new Response(JSON.stringify({ 
+            received: true, 
+            event_id: event.id,
+            message: 'User already has paid status'
+          }), { 
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        // Update user's payment status with transaction-like approach
         const { error: updateError } = await supabaseClient
           .from('profiles')
           .update({ 
@@ -78,16 +113,22 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', userId)
+          .eq('has_paid', false) // Only update if not already paid (additional safety)
 
         if (updateError) {
           console.error('Error updating user payment status:', updateError)
           return new Response('Database update failed', { status: 500 })
         }
 
-        console.log(`Successfully updated payment status for user ${userId}`)
+        console.log(`Successfully updated payment status for user ${userId}`, {
+          email: userEmail,
+          amount: session.amount_total,
+          session_id: session.id
+        })
 
         // TODO: Send confirmation email to user
         // TODO: Log the successful payment for analytics
+        // TODO: Send webhook to other systems if needed
 
         break
       }

@@ -11,31 +11,53 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
   console.log('🧐 QuestionCard received question:', question);
   console.log('🧐 Question options type:', typeof question.options, 'Value:', question.options);
 
+  // Parse options if they're stored as JSON string
+  let options = question.options;
+  if (typeof options === 'string') {
+    try {
+      options = JSON.parse(options);
+    } catch (e) {
+      console.error('Failed to parse question options:', e);
+      options = null;
+    }
+  }
+  
+  // Handle nested options structure from database
+  if (options && typeof options === 'object' && options.options && Array.isArray(options.options)) {
+    options = options.options;
+  }
+
+  // Map database field names to component expectations
+  const questionText = question.question_text || question.text;
+  const questionSection = question.section;
+  const questionExplainer = question.explainer;
+  const questionDefinition = question.definition;
+
   return (
     <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between mb-4">
           <Badge variant="outline" className="text-[#7A9B8A] border-[#7A9B8A]">
-            {question.section}
+            {questionSection}
           </Badge>
         </div>
         
         <CardTitle className="text-2xl font-sacred-bold text-[#2F4F3F] leading-tight">
-          {question.text}
+          {questionText}
         </CardTitle>
         
-        {question.explainer && (
+        {questionExplainer && (
           <CardDescription className="text-[#6B5B73] font-sacred text-base leading-relaxed mt-3">
-            {question.explainer}
+            {questionExplainer}
           </CardDescription>
         )}
         
-        {question.definition && (
+        {questionDefinition && (
           <div className="mt-4 p-4 bg-[#F5F1EB]/50 border border-[#E6D7C9] rounded-lg">
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-[#7A9B8A] mt-0.5 flex-shrink-0" />
               <p className="text-sm text-[#2F4F3F] font-sacred">
-                <strong>Definition:</strong> {question.definition}
+                <strong>Definition:</strong> {questionDefinition}
               </p>
             </div>
           </div>
@@ -44,8 +66,8 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
       
       <CardContent>
         <div className="space-y-3">
-          {question.options && Array.isArray(question.options) ? 
-            question.options.map((option, index) => (
+          {options && Array.isArray(options) ? 
+            options.map((option, index) => (
               <Button
                 key={index}
                 onClick={() => {
@@ -66,6 +88,9 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-amber-800 font-sacred">
                   Error loading question options. Please refresh the page.
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  Debug: options = {JSON.stringify(question.options)}, type = {typeof question.options}
                 </p>
               </div>
             )

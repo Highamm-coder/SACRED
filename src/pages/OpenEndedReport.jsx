@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { User, CoupleAssessment, OpenEndedQuestion, OpenEndedAnswer } from '@/api/entities';
+import { User, Assessment, OpenEndedQuestion, OpenEndedAnswer } from '@/api/entities';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Users } from 'lucide-react';
@@ -8,7 +8,8 @@ import OpenEndedComparisonCard from '../components/openended/OpenEndedComparison
 import AuthWrapper from '../components/auth/AuthWrapper';
 
 export default function OpenEndedReportPage() {
-  const [assessment, setAssessment] = useState(null);
+  const [partner1Assessment, setPartner1Assessment] = useState(null);
+  const [partner2Assessment, setPartner2Assessment] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -21,28 +22,32 @@ export default function OpenEndedReportPage() {
       setIsLoading(true);
       try {
         const urlParams = new URLSearchParams(location.search);
-        const assessmentId = urlParams.get('id');
-        if (!assessmentId) {
-          setError('No assessment ID provided.');
+        const partner1Id = urlParams.get('p1');
+        const partner2Id = urlParams.get('p2');
+        if (!partner1Id || !partner2Id) {
+          setError('Assessment IDs not provided.');
           return;
         }
 
         const currentUser = await User.me();
-        const assessmentData = await CoupleAssessment.get(assessmentId);
+        const partner1AssessmentData = await Assessment.get(partner1Id);
+        const partner2AssessmentData = await Assessment.get(partner2Id);
 
         // Security check
-        if (currentUser.email !== assessmentData.partner1_email && currentUser.email !== assessmentData.partner2_email) {
+        if (currentUser.email !== partner1AssessmentData.user_email || 
+            currentUser.email !== partner2AssessmentData.user_email) {
           setError('You are not authorized to view this report.');
           return;
         }
         
-        setAssessment(assessmentData);
+        setPartner1Assessment(partner1AssessmentData);
+        setPartner2Assessment(partner2AssessmentData);
 
         const allQuestions = await OpenEndedQuestion.list();
         setQuestions(allQuestions.sort((a, b) => a.order - b.order));
 
-        const partner1Answers = await OpenEndedAnswer.filter({ assessmentId, userEmail: assessmentData.partner1_email });
-        const partner2Answers = await OpenEndedAnswer.filter({ assessmentId, userEmail: assessmentData.partner2_email });
+        const partner1Answers = await OpenEndedAnswer.filter({ assessmentId: partner1Id, userEmail: currentUser.email });
+        const partner2Answers = await OpenEndedAnswer.filter({ assessmentId: partner2Id, userEmail: currentUser.email });
 
         const combinedAnswers = {};
         allQuestions.forEach(q => {
@@ -100,7 +105,7 @@ export default function OpenEndedReportPage() {
             </div>
             <h1 className="text-4xl md:text-5xl font-sacred-bold text-[#2F4F3F]">Sacred Reflections</h1>
             <p className="text-lg text-[#6B5B73] font-sacred mt-2">
-              Your shared responses for {assessment.partner1_name} & {assessment.partner2_name}
+              Your shared responses for {partner1Assessment?.metadata?.partnerName || 'Partner 1'} & {partner2Assessment?.metadata?.partnerName || 'Partner 2'}
             </p>
             <p className="mt-4 text-sm font-sacred text-[#6B5B73] max-w-2xl mx-auto">
               Sit together in a comfortable space. Use these reflections as a starting point for deep, meaningful conversation. Listen to understand, not to rebut.
@@ -115,8 +120,8 @@ export default function OpenEndedReportPage() {
                 question={question}
                 answer1={answers[question.questionId]?.answer1}
                 answer2={answers[question.questionId]?.answer2}
-                partner1Name={assessment.partner1_name}
-                partner2Name={assessment.partner2_name}
+                partner1Name={partner1Assessment?.metadata?.partnerName || 'Partner 1'}
+                partner2Name={partner2Assessment?.metadata?.partnerName || 'Partner 2'}
               />
             ))}
           </div>

@@ -3,8 +3,9 @@ import { User } from '@/api/entities';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl, getSiteUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Star, ArrowLeft } from 'lucide-react';
+import { Loader2, Lock, Star, ArrowLeft, AlertCircle } from 'lucide-react';
 import { createStripeCheckoutSession } from '@/api/functions';
+import { getStripe, isStripeConfigured, validateStripeConfig, getStripeEnvironment } from '@/utils/stripeClient';
 import AuthWrapper from '../components/auth/AuthWrapper';
 
 export default function PaymentRequiredPage() {
@@ -12,10 +13,24 @@ export default function PaymentRequiredPage() {
   const [user, setUser] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [stripeEnvironment, setStripeEnvironment] = useState('unknown');
 
   useEffect(() => {
-    const checkUser = async () => {
+    const initializeComponent = async () => {
       try {
+        // Check Stripe configuration
+        const configured = isStripeConfigured();
+        setStripeConfigured(configured);
+        setStripeEnvironment(getStripeEnvironment());
+        
+        if (configured) {
+          validateStripeConfig();
+        } else {
+          setError('Payment system is not properly configured. Please contact support.');
+        }
+
+        // Check user authentication and payment status
         const currentUser = await User.me();
         setUser(currentUser);
         if (currentUser.has_paid) {
@@ -23,29 +38,53 @@ export default function PaymentRequiredPage() {
         }
       } catch (err) {
         // User not logged in, AuthWrapper will handle it
+        console.error('Error initializing payment page:', err);
       }
     };
-    checkUser();
+    initializeComponent();
   }, [navigate]);
 
   const handlePayment = async () => {
+    if (!stripeConfigured) {
+      setError('Payment system is not configured. Please contact support.');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
+
     try {
+      // Initialize Stripe client first
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error('Failed to initialize payment system.');
+      }
+
+      console.log(`[PaymentRequired] Initiating payment in ${stripeEnvironment} mode`);
+
+      // Create checkout session via Edge Function
       const { data } = await createStripeCheckoutSession({ appUrl: getSiteUrl() });
+      
       if (data && data.url) {
+        console.log('[PaymentRequired] Redirecting to Stripe Checkout:', data.sessionId);
         window.location.href = data.url;
       } else {
         throw new Error('Could not create a payment session.');
       }
     } catch (err) {
-      console.error('[PaymentRequired.js] Payment error:', err);
+      console.error('[PaymentRequired] Payment error:', err);
+      
+      // Enhanced error handling
+      let errorMessage = 'Could not initiate payment. Please try again or contact support.';
+      
       if (err.response && err.response.data) {
-        console.error('[PaymentRequired.js] Server response:', err.response.data);
-        setError(`Error: ${err.response.data.error || 'Could not initiate payment.'}`);
-      } else {
-        setError('Could not initiate payment. Please try again or contact support.');
+        console.error('[PaymentRequired] Server response:', err.response.data);
+        errorMessage = `Error: ${err.response.data.error || errorMessage}`;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
+      
+      setError(errorMessage);
       setIsProcessing(false);
     }
   };
@@ -98,16 +137,46 @@ export default function PaymentRequiredPage() {
                 </div>
 
                 <div className="mt-auto">
+                    {/* Stripe Configuration Status */}
+                    {stripeEnvironment !== 'unknown' && (
+                      <div className={`p-3 rounded-lg mb-4 text-center ${
+                        stripeEnvironment === 'test' 
+                          ? 'bg-amber-50 border border-amber-200' 
+                          : 'bg-green-50 border border-green-200'
+                      }`}>
+                        <div className="flex items-center justify-center space-x-2">
+                          {stripeEnvironment === 'test' && (
+                            <span className="text-amber-600 font-sacred text-sm">🧪 Test Mode Active</span>
+                          )}
+                          {stripeEnvironment === 'live' && (
+                            <span className="text-green-600 font-sacred text-sm">🔒 Live Payments Enabled</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!stripeConfigured && (
+                      <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-4 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                          <span className="text-red-700 font-sacred text-sm">Payment system not configured</span>
+                        </div>
+                      </div>
+                    )}
+
                     {error && (
                       <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-4 text-center">
-                        <p className="text-red-700 font-sacred text-sm">{error}</p>
+                        <div className="flex items-start space-x-2">
+                          <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-red-700 font-sacred text-sm">{error}</p>
+                        </div>
                       </div>
                     )}
                     <Button
                       onClick={handlePayment}
-                      disabled={isProcessing}
+                      disabled={isProcessing || !stripeConfigured}
                       size="lg"
-                      className="w-full bg-[#2F4F3F] hover:bg-[#1e3b2e] text-white py-4 text-base font-sacred-bold"
+                      className="w-full bg-[#2F4F3F] hover:bg-[#1e3b2e] disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-4 text-base font-sacred-bold"
                     >
                       {isProcessing ? (
                         <Loader2 className="w-5 h-5 animate-spin" />

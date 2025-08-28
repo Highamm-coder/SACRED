@@ -56,7 +56,8 @@ export default function AssessmentManagement() {
     is_required: true,
     order_index: 0,
     help_text: '',
-    scoring_weight: 1.0
+    scoring_weight: 1.0,
+    discussion_question: ''
   });
 
   const [sectionForm, setSectionForm] = useState({
@@ -339,6 +340,12 @@ export default function AssessmentManagement() {
                             </p>
                           )}
                           
+                          {question.discussion_question && (
+                            <p className="text-sm text-[#C4756B] font-sacred mb-2 p-2 bg-[#F5F1EB] rounded">
+                              💬 Discussion: {question.discussion_question}
+                            </p>
+                          )}
+                          
                           {question.options && (
                             <div className="text-sm text-[#6B5B73] font-sacred">
                               Options: {JSON.stringify(question.options)}
@@ -553,6 +560,19 @@ export default function AssessmentManagement() {
                   onChange={(e) => setQuestionForm(prev => ({ ...prev, help_text: e.target.value }))}
                   placeholder="Additional explanation or context"
                 />
+              </div>
+
+              <div>
+                <Label>Discussion Question for Misalignments (optional)</Label>
+                <Textarea
+                  value={questionForm.discussion_question}
+                  onChange={(e) => setQuestionForm(prev => ({ ...prev, discussion_question: e.target.value }))}
+                  placeholder="Question to ask couples when they give different answers to this question..."
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This question helps couples discuss their differences when they answer this question differently.
+                </p>
               </div>
 
               <div className="flex items-center space-x-4">

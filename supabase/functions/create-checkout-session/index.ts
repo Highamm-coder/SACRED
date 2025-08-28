@@ -8,6 +8,7 @@ import Stripe from 'https://esm.sh/stripe@14.21.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -17,8 +18,28 @@ serve(async (req) => {
   }
 
   try {
+    // Check environment variables first
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    console.log('Environment check:', {
+      hasStripeKey: !!stripeSecretKey,
+      keyPrefix: stripeSecretKey?.substring(0, 10) + '...',
+      supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+      supabaseAnon: !!Deno.env.get('SUPABASE_ANON_KEY')
+    })
+
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY environment variable is not set')
+      return new Response(
+        JSON.stringify({ error: 'Stripe configuration missing' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     })
 
@@ -67,8 +88,12 @@ serve(async (req) => {
 
     // Check if user already has paid
     if (profile.has_paid) {
+      console.log(`User ${user.id} already has paid status, blocking duplicate purchase`)
       return new Response(
-        JSON.stringify({ error: 'User has already purchased access' }),
+        JSON.stringify({ 
+          error: 'User has already purchased access',
+          redirect_url: `${baseUrl}/Dashboard`
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -79,6 +104,8 @@ serve(async (req) => {
     // Parse request body
     const { appUrl } = await req.json()
     const baseUrl = appUrl || 'https://www.sacredonline.co'
+
+    console.log(`Creating checkout session for user ${user.id} (${user.email})`)
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({

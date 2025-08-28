@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, CoupleAssessment, Answer } from '@/api/entities';
+import { User, Assessment } from '@/api/entities';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -39,10 +39,9 @@ export default function AccountPage() {
         setUser(currentUser);
         setFullName(currentUser.full_name || '');
 
-        // Load user's assessments
-        const asPartner1 = await CoupleAssessment.filter({ partner1_email: currentUser.email });
-        const asPartner2 = await CoupleAssessment.filter({ partner2_email: currentUser.email });
-        setAssessments([...asPartner1, ...asPartner2]);
+        // Load user's assessments (single-account system)
+        const userAssessments = await Assessment.list();
+        setAssessments(userAssessments);
 
       } catch (error) {
         console.error('Error loading account data:', error);
@@ -69,41 +68,14 @@ export default function AccountPage() {
 
   const handleResetAssessment = async (assessmentId) => {
     try {
-      // Delete all answers for this assessment by this user
-      const userAnswers = await Answer.filter({ assessmentId, userEmail: user.email });
+      // Delete all responses for this assessment
+      await Assessment.deleteResponses(assessmentId);
       
-      // Delete answers one by one, but handle cases where some might already be deleted
-      const deletePromises = userAnswers.map(async (answer) => {
-        try {
-          await Answer.delete(answer.id);
-        } catch (error) {
-          // If answer already deleted or doesn't exist, continue
-          if (error.response?.status === 404) {
-            console.log(`Answer ${answer.id} already deleted or not found`);
-          } else {
-            throw error; // Re-throw other errors
-          }
-        }
+      // Reset assessment status to pending and progress to 0
+      await Assessment.update(assessmentId, { 
+        status: 'pending',
+        progress: 0
       });
-      
-      await Promise.all(deletePromises);
-
-      // Reset assessment status if needed
-      const assessment = await CoupleAssessment.get(assessmentId);
-      let newStatus = 'pending';
-      
-      if (assessment.status === 'partner1_completed' && user.email === assessment.partner1_email) {
-        newStatus = 'pending';
-      } else if (assessment.status === 'partner2_completed' && user.email === assessment.partner2_email) {
-        newStatus = 'pending';
-      } else if (assessment.status === 'completed') {
-        // If both completed, determine new status based on who is resetting
-        newStatus = user.email === assessment.partner1_email ? 'partner2_completed' : 'partner1_completed';
-      }
-      
-      if (newStatus !== assessment.status) {
-        await CoupleAssessment.update(assessmentId, { status: newStatus });
-      }
 
       // Refresh the page to show updated state
       window.location.reload();
@@ -201,13 +173,11 @@ export default function AccountPage() {
                 {assessments.map((assessment) => (
                   <div key={assessment.id} className="flex items-center justify-between p-4 border border-[#E6D7C9] rounded-lg">
                     <div>
-                      <h3 className="font-semibold">Assessment with {
-                        user.email === assessment.partner1_email ? 
-                        (assessment.partner2_name || 'Partner') : 
-                        assessment.partner1_name
-                      }</h3>
+                      <h3 className="font-semibold">
+                        {assessment.metadata?.partnerName || assessment.metadata?.partner1Name || assessment.metadata?.partner2Name || 'Assessment'}
+                      </h3>
                       <p className="text-sm text-gray-500">
-                        Status: {assessment.status.replace('_', ' ')} • Created: {new Date(assessment.created_date).toLocaleDateString()}
+                        Status: {assessment.status.replace('_', ' ')} • Progress: {assessment.progress || 0}% • Created: {new Date(assessment.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <AlertDialog>

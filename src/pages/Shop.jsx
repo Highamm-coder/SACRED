@@ -3,14 +3,15 @@ import { Product } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import AuthWrapper from '../components/auth/AuthWrapper';
 
 const ProductCard = ({ product }) => (
-  <a href={product.affiliateUrl} target="_blank" rel="noopener noreferrer" className="block group">
+  <a href={product.external_url || product.affiliateUrl} target="_blank" rel="noopener noreferrer" className="block group">
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-[#E6D7C9] h-full flex flex-col">
       <div className="aspect-square bg-[#F5F1EB] overflow-hidden">
         <img 
-          src={product.imageUrl} 
-          alt={product.name} 
+          src={product.featured_image || product.imageUrl} 
+          alt={product.title || product.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
           decoding="async"
@@ -18,12 +19,12 @@ const ProductCard = ({ product }) => (
       </div>
       <div className="p-4 sm:p-5 flex flex-col flex-grow">
         <Badge variant="outline" className="border-[#C4756B] text-[#C4756B] text-xs font-sacred mb-3 w-fit capitalize">
-          {product.category}
+          {product.product_type || product.category}
         </Badge>
-        <h3 className="text-lg font-sacred-bold text-[#2F4F3F] mb-2 leading-tight flex-grow">{product.name}</h3>
+        <h3 className="text-lg font-sacred-bold text-[#2F4F3F] mb-2 leading-tight flex-grow">{product.title || product.name}</h3>
         <p className="text-sm text-[#6B5B73] font-sacred mb-4 line-clamp-3 flex-grow">{product.description}</p>
         {product.price && (
-          <p className="text-base font-sacred-medium text-[#2F4F3F] mt-auto pt-2">{product.price}</p>
+          <p className="text-base font-sacred-medium text-[#2F4F3F] mt-auto pt-2">${product.price}</p>
         )}
       </div>
     </div>
@@ -42,7 +43,7 @@ export default function ShopPage() {
         const fetchedProducts = await Product.list();
         setProducts(fetchedProducts);
         
-        const uniqueCategories = ['All', ...new Set(fetchedProducts.map(p => p.category))];
+        const uniqueCategories = ['All', ...new Set(fetchedProducts.map(p => p.product_type || p.category))];
         setCategories(uniqueCategories);
 
       } catch (error) {
@@ -56,11 +57,22 @@ export default function ShopPage() {
 
   const filteredProducts = activeCategory === 'All'
     ? products
-    : products.filter(p => p.category === activeCategory);
+    : products.filter(p => (p.product_type || p.category) === activeCategory);
 
-  const featuredProducts = products.filter(p => p.isFeatured);
+  const featuredProducts = products.filter(p => p.featured);
+
+  if (isLoading) {
+    return (
+      <AuthWrapper requireAuth={true}>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-[#2F4F3F]" />
+        </div>
+      </AuthWrapper>
+    );
+  }
 
   return (
+    <AuthWrapper requireAuth={true}>
     <div className="bg-[#F5F1EB] min-h-screen">
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -100,11 +112,7 @@ export default function ShopPage() {
           </div>
         </div>
         
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#2F4F3F]" />
-          </div>
-        ) : products.length === 0 ? (
+        {products.length === 0 ? (
           <div className="text-center py-20">
             <div className="max-w-md mx-auto">
               <div className="w-24 h-24 bg-[#7A9B8A]/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -156,5 +164,6 @@ export default function ShopPage() {
         )}
       </div>
     </div>
+    </AuthWrapper>
   );
 }

@@ -1,5 +1,51 @@
 import { supabase, handleSupabaseError } from '../supabaseClient';
 
+// Helper function for generating unique slugs across all CMS services
+const generateUniqueSlug = async (tableName, title) => {
+  const baseSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-');
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('id')
+        .eq('slug', slug)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error checking slug:', error);
+        break;
+      }
+      
+      if (!data || data.length === 0) {
+        break; // Slug is available
+      }
+      
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+      
+      if (counter > 100) {
+        slug = `${baseSlug}-${Date.now()}`;
+        break;
+      }
+    } catch (error) {
+      console.error('Error in slug generation:', error);
+      slug = `${baseSlug}-${Date.now()}`;
+      break;
+    }
+  }
+  
+  return slug;
+};
+
 // CMS Base Service Class
 class CMSService {
   constructor(tableName) {
@@ -165,7 +211,27 @@ export class BlogPostService extends CMSService {
 // Education Resources Service
 export class EducationResourceService extends CMSService {
   constructor() {
-    super('education_resources');
+    super('resources');
+  }
+
+  // Override create to handle slug generation
+  async create(data) {
+    // Auto-generate slug if not provided
+    if (!data.slug && data.title) {
+      data.slug = await generateUniqueSlug(this.tableName, data.title);
+    }
+    
+    return super.create(data);
+  }
+
+  // Override update to handle slug generation
+  async update(id, data) {
+    // Auto-generate slug if title changed but slug wasn't provided
+    if (data.title && !data.slug) {
+      data.slug = this.generateSlugFromTitle(data.title);
+    }
+    
+    return super.update(id, data);
   }
 
   async listPublished(filters = {}, options = {}) {
@@ -186,12 +252,53 @@ export class EducationResourceService extends CMSService {
     
     return Promise.all(updates);
   }
+
+  // Helper method for generating slugs
+  generateSlugFromTitle(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim('-');
+  }
+
+  async publish(id) {
+    return this.update(id, { 
+      status: 'published', 
+      published_at: new Date().toISOString() 
+    });
+  }
+
+  async unpublish(id) {
+    return this.update(id, { status: 'draft' });
+  }
 }
 
 // Product Recommendations Service
 export class ProductRecommendationService extends CMSService {
   constructor() {
-    super('product_recommendations');
+    super('products');
+  }
+
+  // Override create to handle slug generation
+  async create(data) {
+    // Auto-generate slug if not provided
+    if (!data.slug && data.title) {
+      data.slug = await generateUniqueSlug(this.tableName, data.title);
+    }
+    
+    return super.create(data);
+  }
+
+  // Override update to handle slug generation
+  async update(id, data) {
+    // Auto-generate slug if title changed but slug wasn't provided
+    if (data.title && !data.slug) {
+      data.slug = this.generateSlugFromTitle(data.title);
+    }
+    
+    return super.update(id, data);
   }
 
   async listActive(options = {}) {
@@ -204,6 +311,91 @@ export class ProductRecommendationService extends CMSService {
   async listFeatured(limit = 6) {
     return this.list({ status: 'active', featured: true }, { limit });
   }
+
+  // Helper method for generating slugs
+  generateSlugFromTitle(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim('-');
+  }
+
+  async activate(id) {
+    return this.update(id, { status: 'active' });
+  }
+
+  async deactivate(id) {
+    return this.update(id, { status: 'inactive' });
+  }
+}
+
+// Reflection Questions Service
+export class ReflectionQuestionsService extends CMSService {
+  constructor() {
+    super('reflection_questions');
+  }
+
+  // Override create to handle slug generation
+  async create(data) {
+    // Auto-generate slug if not provided
+    if (!data.slug && data.title) {
+      data.slug = this.generateSlugFromTitle(data.title);
+    }
+    
+    return super.create(data);
+  }
+
+  // Override update to handle slug generation
+  async update(id, data) {
+    // Auto-generate slug if title changed but slug wasn't provided
+    if (data.title && !data.slug) {
+      data.slug = this.generateSlugFromTitle(data.title);
+    }
+    
+    return super.update(id, data);
+  }
+
+  async listPublished(options = {}) {
+    return this.list({ status: 'published' }, {
+      orderBy: { column: 'order_index', ascending: true },
+      ...options
+    });
+  }
+
+  async reorderQuestions(questionIds) {
+    const updates = questionIds.map((id, index) => 
+      this.update(id, { order_index: index })
+    );
+    
+    return Promise.all(updates);
+  }
+
+  // Helper method for generating slugs
+  generateSlugFromTitle(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim('-');
+  }
+
+  async publish(id) {
+    return this.update(id, { 
+      status: 'published', 
+      published_at: new Date().toISOString() 
+    });
+  }
+
+  async unpublish(id) {
+    return this.update(id, { status: 'draft' });
+  }
+
+  async listByCategory(category, options = {}) {
+    return this.listPublished({ category }, options);
+  }
 }
 
 // Page Content Service
@@ -212,17 +404,46 @@ export class PageContentService extends CMSService {
     super('page_content');
   }
 
+  // Override create to handle slug generation
+  async create(data) {
+    // Set slug from page_slug if not provided
+    if (!data.slug && data.page_slug) {
+      data.slug = data.page_slug;
+    }
+    
+    return super.create(data);
+  }
+
   async getPageContent(pageSlug) {
-    return this.getBySlug(pageSlug);
+    try {
+      return await this.getBySlug(pageSlug);
+    } catch (error) {
+      // Try finding by page_slug for backward compatibility
+      const { data, error: pageSlugError } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .eq('page_slug', pageSlug)
+        .single();
+      
+      if (pageSlugError) {
+        throw pageSlugError;
+      }
+      
+      return data;
+    }
   }
 
   async updatePageContent(pageSlug, content) {
     try {
-      const existing = await this.getBySlug(pageSlug);
+      const existing = await this.getPageContent(pageSlug);
       return this.update(existing.id, content);
     } catch (error) {
       // Page doesn't exist, create it
-      return this.create({ page_slug: pageSlug, ...content });
+      return this.create({ 
+        page_slug: pageSlug, 
+        slug: pageSlug,
+        ...content 
+      });
     }
   }
 }
@@ -527,6 +748,7 @@ export class AnalyticsService {
 export const blogPostService = new BlogPostService();
 export const educationResourceService = new EducationResourceService();
 export const productRecommendationService = new ProductRecommendationService();
+export const reflectionQuestionsService = new ReflectionQuestionsService();
 export const pageContentService = new PageContentService();
 export const mediaLibraryService = new MediaLibraryService();
 export const userManagementService = new UserManagementService();

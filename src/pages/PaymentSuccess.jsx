@@ -2,63 +2,83 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { verifyCheckoutSession } from '@/api/functions';
-import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function PaymentSuccessPage() {
-  const [status, setStatus] = useState('verifying'); // verifying, success, error
+  const [status, setStatus] = useState('verifying'); // verifying, success, error, retrying
   const [errorMessage, setErrorMessage] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [sessionId, setSessionId] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const verifyPayment = async () => {
-      const params = new URLSearchParams(location.search);
-      const sessionId = params.get('session_id');
+  const verifyPayment = async (currentSessionId, currentAttempts = 0) => {
+    try {
+      setStatus('verifying');
+      console.log(`[PaymentSuccess] Attempt ${currentAttempts + 1} - Verifying session: ${currentSessionId}`);
+      
+      // Give the webhook some time to process (up to 15 seconds with exponential backoff)
+      const maxAttempts = 15;
+      let verified = false;
 
-      if (!sessionId) {
-        setStatus('error');
-        setErrorMessage('No payment session ID found. Please contact support if you have been charged.');
-        return;
-      }
+      while (currentAttempts < maxAttempts && !verified) {
+        const result = await verifyCheckoutSession({ sessionId: currentSessionId });
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
-      try {
-        // Give the webhook some time to process (up to 10 seconds)
-        let attempts = 0;
-        const maxAttempts = 10;
-        let verified = false;
-
-        while (attempts < maxAttempts && !verified) {
-          const result = await verifyCheckoutSession({ sessionId });
+        if (result.verified) {
+          verified = true;
+          setStatus('success');
+          console.log('[PaymentSuccess] Payment verified successfully');
           
-          if (result.error) {
-            throw new Error(result.error);
-          }
-
-          if (result.verified) {
-            verified = true;
-            setStatus('success');
-            setTimeout(() => {
-              navigate(createPageUrl('Dashboard'));
-            }, 3000); // Redirect to dashboard after 3 seconds
-            break;
-          }
-
-          // Wait 1 second before checking again
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          attempts++;
+          // Redirect to dashboard after 3 seconds
+          setTimeout(() => {
+            navigate(createPageUrl('Dashboard'));
+          }, 3000);
+          break;
         }
 
-        if (!verified) {
-          throw new Error('Payment verification timed out. Your payment may still be processing. Please check your dashboard in a few minutes or contact support if the issue persists.');
-        }
-
-      } catch (err) {
-        setStatus('error');
-        setErrorMessage(err.message || 'An unknown error occurred during verification.');
+        // Exponential backoff: wait longer between each attempt
+        const waitTime = Math.min(1000 * Math.pow(1.5, currentAttempts), 3000);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        currentAttempts++;
+        setAttempts(currentAttempts);
       }
-    };
 
-    verifyPayment();
+      if (!verified) {
+        throw new Error('Payment verification timed out. Your payment may still be processing. Please check your dashboard in a few minutes or contact support if the issue persists.');
+      }
+
+    } catch (err) {
+      console.error('[PaymentSuccess] Verification error:', err);
+      setStatus('error');
+      setErrorMessage(err.message || 'An unknown error occurred during verification.');
+    }
+  };
+
+  const handleRetry = () => {
+    setStatus('retrying');
+    setAttempts(0);
+    setTimeout(() => {
+      verifyPayment(sessionId, 0);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const currentSessionId = params.get('session_id');
+
+    if (!currentSessionId) {
+      setStatus('error');
+      setErrorMessage('No payment session ID found. Please contact support if you have been charged.');
+      return;
+    }
+
+    setSessionId(currentSessionId);
+    verifyPayment(currentSessionId, 0);
   }, [location, navigate]);
   
   const renderContent = () => {
@@ -69,6 +89,17 @@ export default function PaymentSuccessPage() {
             <Loader2 className="w-12 h-12 text-[#2F4F3F] animate-spin" />
             <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mt-6">Verifying your payment...</h1>
             <p className="text-[#6B5B73] font-sacred mt-2">Please wait, this will only take a moment.</p>
+            {attempts > 0 && (
+              <p className="text-sm text-gray-500 font-sacred mt-2">Attempt {attempts + 1} of 15</p>
+            )}
+          </>
+        );
+      case 'retrying':
+        return (
+          <>
+            <RefreshCw className="w-12 h-12 text-[#2F4F3F] animate-spin" />
+            <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mt-6">Retrying verification...</h1>
+            <p className="text-[#6B5B73] font-sacred mt-2">Checking your payment status again.</p>
           </>
         );
       case 'success':
@@ -84,9 +115,27 @@ export default function PaymentSuccessPage() {
         return (
           <>
             <AlertTriangle className="w-12 h-12 text-red-600" />
-            <h1 className="text-2xl font-sacred-bold text-red-700 mt-6">Payment Verification Failed</h1>
-            <p className="text-red-600 font-sacred mt-2">{errorMessage}</p>
-            <p className="text-sm text-gray-500 font-sacred mt-4">Please contact support for assistance.</p>
+            <h1 className="text-2xl font-sacred-bold text-red-700 mt-6">Payment Verification Issue</h1>
+            <p className="text-red-600 font-sacred mt-2 text-center">{errorMessage}</p>
+            <div className="mt-6 space-y-3">
+              <Button 
+                onClick={handleRetry}
+                className="w-full bg-[#2F4F3F] hover:bg-[#1e3b2e] text-white font-sacred-bold"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+              <Button 
+                onClick={() => navigate(createPageUrl('Dashboard'))}
+                variant="outline"
+                className="w-full font-sacred border-[#2F4F3F] text-[#2F4F3F] hover:bg-[#2F4F3F] hover:text-white"
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 font-sacred mt-4 text-center">
+              If the issue persists, contact support with session ID: {sessionId}
+            </p>
           </>
         );
       default:

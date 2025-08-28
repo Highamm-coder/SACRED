@@ -28,8 +28,6 @@ import OpenEndedInvite from "./OpenEndedInvite";
 
 import Education from "./Education";
 
-import Blog from "./Blog";
-
 import AuthDebug from "./AuthDebug";
 
 import Onboarding from "./Onboarding";
@@ -46,15 +44,19 @@ import PaymentSuccess from "./PaymentSuccess";
 
 import Shop from "./Shop";
 
-import BlogPost from "./BlogPost";
-
 import Login from "./Login";
 
 import EmailTest from "./EmailTest";
 
 import AdminCMS from "./AdminCMS";
 
-import PartnerInvite from "./PartnerInvite";
+import ResourcePage from "./ResourcePage";
+
+import BlogEditor from "./BlogEditor";
+
+import ResourceEditor from "./ResourceEditor";
+
+// PartnerInvite removed in single-account migration
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -88,8 +90,6 @@ const PAGES = {
     
     Education: Education,
     
-    Blog: Blog,
-    
     AuthDebug: AuthDebug,
     
     Onboarding: Onboarding,
@@ -106,15 +106,19 @@ const PAGES = {
     
     Shop: Shop,
     
-    BlogPost: BlogPost,
-    
     Login: Login,
     
     EmailTest: EmailTest,
     
     AdminCMS: AdminCMS,
     
-    PartnerInvite: PartnerInvite,
+    ResourcePage: ResourcePage,
+    
+    BlogEditor: BlogEditor,
+    
+    ResourceEditor: ResourceEditor,
+    
+    // PartnerInvite: removed in single-account migration
     
 }
 
@@ -171,8 +175,6 @@ function PagesContent() {
                 
                 <Route path="/Education" element={<Education />} />
                 
-                <Route path="/Blog" element={<Blog />} />
-                
                 <Route path="/AuthDebug" element={<AuthDebug />} />
                 
                 <Route path="/Onboarding" element={<Onboarding />} />
@@ -189,15 +191,19 @@ function PagesContent() {
                 
                 <Route path="/Shop" element={<Shop />} />
                 
-                <Route path="/BlogPost" element={<BlogPost />} />
-                
                 <Route path="/Login" element={<Login />} />
                 
                 <Route path="/EmailTest" element={<EmailTest />} />
                 
                 <Route path="/AdminCMS" element={<AdminCMS />} />
                 
-                <Route path="/PartnerInvite" element={<PartnerInvite />} />
+                <Route path="/ResourcePage" element={<ResourcePage />} />
+                
+                <Route path="/BlogEditor" element={<BlogEditor />} />
+                
+                <Route path="/ResourceEditor" element={<ResourceEditor />} />
+                
+                {/* PartnerInvite route removed in single-account migration */}
                 
             </Routes>
         </Layout>
