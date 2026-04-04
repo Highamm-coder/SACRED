@@ -105,7 +105,7 @@ export default function PaymentSuccessPage() {
       case 'success':
         return (
           <>
-            <CheckCircle className="w-12 h-12 text-green-600" />
+            <CheckCircle className="w-12 h-12 text-[#5A9CB3]" />
             <h1 className="text-2xl font-sacred-bold text-[#2F4F3F] mt-6">Payment Successful!</h1>
             <p className="text-[#6B5B73] font-sacred mt-2">Thank you for your purchase. You now have full access to SACRED.</p>
             <p className="text-sm text-gray-500 font-sacred mt-4">Redirecting you to the dashboard...</p>

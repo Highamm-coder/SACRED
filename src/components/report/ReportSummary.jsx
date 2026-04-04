@@ -41,7 +41,7 @@ export default function ReportSummary({ total, aligned }) {
         </div>
         <div className="space-y-2">
             <div className="flex items-center">
-                <Heart className="w-5 h-5 text-green-500 mr-2" />
+                <Heart className="w-5 h-5 text-[#5A9CB3] mr-2" />
                 <div>
                     <span className="font-bold text-xl">{aligned}</span>
                     <span className="text-gray-600"> Aligned</span>

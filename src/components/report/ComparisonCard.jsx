@@ -13,10 +13,10 @@ export default function ComparisonCard({ comparison, assessment }) {
   const getOptionStyle = (answer, otherAnswer, isAligned) => {
     let baseStyle = "p-3 rounded-lg text-sm font-sacred transition-colors";
     if (!isAligned) {
-      return `${baseStyle} bg-amber-100 text-amber-900 border border-amber-200`;
+      return `${baseStyle} bg-[#F5F1EB] text-[#C4756B] border border-[#E6D7C9]`;
     }
     if (answer === otherAnswer) {
-      return `${baseStyle} bg-green-100 text-green-900 border border-green-200`;
+      return `${baseStyle} bg-[#E6F3F7] text-[#5A9CB3] border border-[#B8D9E3]`;
     }
     return `${baseStyle} bg-gray-100 text-gray-800`;
   };

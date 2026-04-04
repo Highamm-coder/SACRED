@@ -164,8 +164,8 @@ export default function DashboardPage() {
           {/* Show error state if there's a loading error */}
           {loadingError && (
             <div className="text-center py-6 sm:py-8 lg:py-12 px-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-[#F5F1EB] rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-[#C4756B]" />
               </div>
               <h2 className="text-xl sm:text-2xl font-sacred-bold text-[#2F4F3F] mb-4">
                 Assessment Loading Error
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                     {/* Partner 1 Assessment Card */}
                     {partner1Assessment ? (
                       <Link to={createPageUrl(`Assessment?id=${partner1Assessment.id}`)} className="block">
-                        <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#C4756B] to-[#B86761] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
+                        <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#8B6F73] to-[#7A5E63] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
                           <div className="absolute inset-0 bg-black/20"></div>
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                           
@@ -226,7 +226,7 @@ export default function DashboardPage() {
                         </div>
                       </Link>
                     ) : (
-                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#C4756B] to-[#B86761] rounded-xl overflow-hidden opacity-60">
+                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#8B6F73] to-[#7A5E63] rounded-xl overflow-hidden opacity-60">
                         <div className="absolute inset-0 bg-black/20"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6">
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                     {/* Partner 2 Assessment Card */}
                     {partner2Assessment ? (
                       <Link to={createPageUrl(`Assessment?id=${partner2Assessment.id}`)} className="block">
-                        <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#7A9B8A] to-[#6B8B7A] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
+                        <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#6B8B7A] to-[#5A7B6A] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
                           <div className="absolute inset-0 bg-black/20"></div>
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                           
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                         </div>
                       </Link>
                     ) : (
-                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#7A9B8A] to-[#6B8B7A] rounded-xl overflow-hidden opacity-60">
+                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#6B8B7A] to-[#5A7B6A] rounded-xl overflow-hidden opacity-60">
                         <div className="absolute inset-0 bg-black/20"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6">
@@ -289,7 +289,7 @@ export default function DashboardPage() {
 
                     {/* Sacred Reflections Card */}
                     <Link to={createPageUrl('OpenEndedStart')} className="block">
-                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
+                      <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#8B7A9B] to-[#7A6B8B] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
                         <div className="absolute inset-0 bg-black/20"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         

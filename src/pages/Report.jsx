@@ -185,9 +185,9 @@ export default function ReportPage() {
     const sectionTitle = sectionId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     const progressPercentage = data.averageScore ? (data.averageScore / 10) * 100 : 0;
     const getScoreColor = (score) => {
-      if (score >= 8) return 'text-green-600';
-      if (score >= 6) return 'text-yellow-600';
-      return 'text-red-500';
+      if (score >= 8) return 'text-[#5A9CB3]'; // Soft blue for high scores
+      if (score >= 6) return 'text-[#B8956A]'; // Warm gold for medium scores  
+      return 'text-[#C4756B]'; // SACRED coral for low scores
     };
     const getSectionIcon = (section) => {
       const iconMap = {
@@ -236,7 +236,7 @@ export default function ReportPage() {
                 value={progressPercentage} 
                 className="h-2 bg-[#E6D7C9]" 
                 style={{
-                  '--tw-bg-primary': data.averageScore >= 8 ? '#10B981' : data.averageScore >= 6 ? '#F59E0B' : '#EF4444'
+                  '--tw-bg-primary': data.averageScore >= 8 ? '#5A9CB3' : data.averageScore >= 6 ? '#B8956A' : '#C4756B'
                 }}
               />
             </div>
@@ -337,7 +337,7 @@ export default function ReportPage() {
         name: sectionId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
         score: data.averageScore || 0,
         responses: data.responses.length,
-        fill: data.averageScore >= 8 ? '#10B981' : data.averageScore >= 6 ? '#F59E0B' : '#EF4444'
+        fill: data.averageScore >= 8 ? '#5A9CB3' : data.averageScore >= 6 ? '#B8956A' : '#C4756B'
       }));
 
       return (
@@ -356,8 +356,8 @@ export default function ReportPage() {
               </CardDescription>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm">
                 <div className={`text-2xl font-sacred-bold ${
-                  overallAverage >= 8 ? 'text-green-600' : 
-                  overallAverage >= 6 ? 'text-yellow-600' : 'text-red-500'
+                  overallAverage >= 8 ? 'text-[#5A9CB3]' : 
+                  overallAverage >= 6 ? 'text-[#B8956A]' : 'text-[#C4756B]'
                 }`}>
                   {overallAverage}/10
                 </div>
@@ -396,9 +396,9 @@ export default function ReportPage() {
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm border border-[#E6D7C9]/50">
                   <div className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-yellow-500" />
+                    <Star className="w-5 h-5 text-[#B8956A]" />
                     <div>
-                      <div className="text-xl font-sacred-bold text-yellow-600">
+                      <div className="text-xl font-sacred-bold text-[#B8956A]">
                         {sectionChartData.filter(s => s.score >= 8).length}
                       </div>
                       <div className="text-xs font-sacred text-[#6B5B73]">Strong Areas</div>
@@ -499,9 +499,9 @@ export default function ReportPage() {
                 Question {index + 1} of {total}
               </Badge>
               {questionData.isAligned ? (
-                <Badge className="bg-green-100 text-green-700 border-green-200">Aligned</Badge>
+                <Badge className="bg-[#E6F3F7] text-[#5A9CB3] border-[#B8D9E3]">Aligned</Badge>
               ) : (
-                <Badge className="bg-orange-100 text-orange-700 border-orange-200">Discussion Needed</Badge>
+                <Badge className="bg-[#F5F1EB] text-[#C4756B] border-[#E6D7C9]">Discussion Needed</Badge>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -567,8 +567,8 @@ export default function ReportPage() {
             </div>
             
             {questionData.isAligned && (
-              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-center">
-                <span className="text-sm text-green-700 font-sacred">✓ Matching responses</span>
+              <div className="mt-3 p-2 bg-[#E6F3F7] border border-[#B8D9E3] rounded text-center">
+                <span className="text-sm text-[#5A9CB3] font-sacred">✓ Matching responses</span>
               </div>
             )}
             
@@ -604,9 +604,9 @@ export default function ReportPage() {
                 {questionData.section}
               </Badge>
               {questionData.isAligned ? (
-                <Badge className="bg-green-100 text-green-700 border-green-200">Aligned</Badge>
+                <Badge className="bg-[#E6F3F7] text-[#5A9CB3] border-[#B8D9E3]">Aligned</Badge>
               ) : (
-                <Badge className="bg-orange-100 text-orange-700 border-orange-200">Discussion Needed</Badge>
+                <Badge className="bg-[#F5F1EB] text-[#C4756B] border-[#E6D7C9]">Discussion Needed</Badge>
               )}
             </div>
             
@@ -630,8 +630,8 @@ export default function ReportPage() {
             </div>
             
             {questionData.isAligned && (
-              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-center">
-                <span className="text-sm text-green-700 font-sacred">✓ Matching responses</span>
+              <div className="mt-3 p-2 bg-[#E6F3F7] border border-[#B8D9E3] rounded text-center">
+                <span className="text-sm text-[#5A9CB3] font-sacred">✓ Matching responses</span>
               </div>
             )}
             
@@ -688,30 +688,30 @@ export default function ReportPage() {
               
               {/* Progress Status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-2xl mx-auto">
-                <div className={`p-6 rounded-xl border-2 ${partner1Complete ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className={`p-6 rounded-xl border-2 ${partner1Complete ? 'border-[#B8D9E3] bg-[#E6F3F7]' : 'border-gray-200 bg-gray-50'}`}>
                   <div className="flex items-center gap-3 mb-3">
                     {partner1Complete ? (
-                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <CheckCircle className="w-6 h-6 text-[#5A9CB3]" />
                     ) : (
                       <Clock className="w-6 h-6 text-gray-400" />
                     )}
                     <h3 className="font-sacred-bold text-[#2F4F3F]">{partner1Name} Assessment</h3>
                   </div>
-                  <p className={`text-sm font-sacred ${partner1Complete ? 'text-green-700' : 'text-gray-600'}`}>
+                  <p className={`text-sm font-sacred ${partner1Complete ? 'text-[#5A9CB3]' : 'text-gray-600'}`}>
                     {partner1Complete ? 'Completed' : 'In Progress'}
                   </p>
                 </div>
                 
-                <div className={`p-6 rounded-xl border-2 ${partner2Complete ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className={`p-6 rounded-xl border-2 ${partner2Complete ? 'border-[#B8D9E3] bg-[#E6F3F7]' : 'border-gray-200 bg-gray-50'}`}>
                   <div className="flex items-center gap-3 mb-3">
                     {partner2Complete ? (
-                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <CheckCircle className="w-6 h-6 text-[#5A9CB3]" />
                     ) : (
                       <Clock className="w-6 h-6 text-gray-400" />
                     )}
                     <h3 className="font-sacred-bold text-[#2F4F3F]">{partner2Name} Assessment</h3>
                   </div>
-                  <p className={`text-sm font-sacred ${partner2Complete ? 'text-green-700' : 'text-gray-600'}`}>
+                  <p className={`text-sm font-sacred ${partner2Complete ? 'text-[#5A9CB3]' : 'text-gray-600'}`}>
                     {partner2Complete ? 'Completed' : 'In Progress'}
                   </p>
                 </div>
