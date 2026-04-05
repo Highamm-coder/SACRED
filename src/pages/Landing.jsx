@@ -15,6 +15,7 @@ const TaglineSection = lazy(() => import('../components/landing/TaglineSection')
 const TestimonialsSection = lazy(() => import('../components/landing/TestimonialsSection'));
 const InvestmentSection = lazy(() => import('../components/landing/InvestmentSection'));
 const FinalCtaSection = lazy(() => import('../components/landing/FinalCtaSection'));
+const FaqSection = lazy(() => import('../components/landing/FaqSection'));
 
 const SectionLoader = () => (
   <div className="w-full h-96 flex items-center justify-center" />
@@ -198,6 +199,7 @@ export default function LandingPage() {
             </div>
 
             <PrivacySection handleGetStarted={handleGetStarted} />
+            <FaqSection handleGetStarted={handleGetStarted} />
 
             {/* Lines meet before the core statement */}
             <ConvergingLines opacity={0.3} />

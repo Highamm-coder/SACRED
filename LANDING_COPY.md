@@ -156,6 +156,37 @@ Start Privately
 
 ---
 
+## Common Questions
+
+**Heading**
+Common Questions
+
+**Q: Does SACRED cover what to expect on our wedding night?**
+Yes — specifically. The assessment covers physical expectations, pain, arousal, orgasm timelines, and what first-time sex actually looks like in practice. It's the preparation most premarital resources skip.
+
+**Q: Is it explicit or graphic?**
+No. The questions are direct and specific — because vague questions lead to vague conversations — but they're not pornographic. Think honest and plain, not explicit.
+
+**Q: Does this replace premarital counselling?**
+No. SACRED covers the sexual preparation that most premarital counselling doesn't touch. They work well together — most counsellors don't go where SACRED goes.
+
+**Q: What if we disagree on our results?**
+That's the point. Finding a difference in the assessment is far better than discovering it on your wedding night. Every area of difference comes with a guided discussion prompt to help you work through it.
+
+**Q: Is this theologically conservative?**
+Yes. SACRED was built by a Christian couple for couples who are waiting until marriage. The framework is biblically grounded throughout.
+
+**Q: What if one of us has a sexual history and the other doesn't?**
+The assessment addresses this directly. It's one of the most important conversations to have before marriage, and one of the most commonly avoided. SACRED creates the structure to have it honestly.
+
+**Q: How long does it take?**
+Most people finish in 20–30 minutes. You each complete it privately, then review your results together.
+
+**CTA Button**
+Begin Assessment
+
+---
+
 ## Tagline
 
 **Heading**
