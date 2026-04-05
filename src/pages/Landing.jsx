@@ -145,17 +145,17 @@ export default function LandingPage() {
         className="fixed top-0 left-0 right-0 z-20 py-4 px-6 md:px-10 nav-at-top"
       >
         <nav className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className="nav-logo text-2xl font-sacred tracking-widest transition-colors duration-300">SACRED</div>
+          <div className="nav-logo text-3xl font-sacred tracking-widest transition-colors duration-300">SACRED</div>
           <div className="flex items-center gap-6">
             <a
               href="/blog"
-              className="nav-link font-sacred text-sm transition-colors duration-300"
+              className="nav-link font-sacred text-base transition-colors duration-300"
             >
               Blog
             </a>
             <button
               onClick={handleSignIn}
-              className="nav-link font-sacred text-sm transition-colors duration-300"
+              className="nav-link font-sacred text-base transition-colors duration-300"
             >
               Sign in
             </button>

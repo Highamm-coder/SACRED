@@ -32,7 +32,7 @@ export default function HeroSection({ handleGetStarted, handleSignIn }) {
         <div className="absolute bottom-8 left-8 md:left-10 right-8 md:right-10 z-10 max-w-[420px]">
           <h2
             className="text-white font-sacred-medium italic leading-[1.1] mb-3"
-            style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.6rem)' }}
+            style={{ fontSize: 'clamp(2.2rem, 4vw, 3.4rem)' }}
           >
             Sexual Preparation for Christian Engaged Couples
           </h2>
