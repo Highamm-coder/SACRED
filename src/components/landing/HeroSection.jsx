@@ -34,10 +34,10 @@ export default function HeroSection({ handleGetStarted, handleSignIn }) {
             className="text-white font-sacred-medium italic leading-[1.1] mb-3"
             style={{ fontSize: 'clamp(1.75rem, 3.2vw, 2.6rem)' }}
           >
-            Prepare for your marriage, fully.
+            Sexual Preparation for Christian Engaged Couples
           </h2>
           <p className="text-white/80 font-sacred text-sm md:text-base leading-relaxed mb-5">
-            A comprehensive assessment for Christian engaged couples. The conversations no one taught you to have, finally made possible.
+            A comprehensive assessment for Christian engaged couples. Covering everything about sexual intimacy that no one taught you to talk about.
           </p>
           <Button
             onClick={handleGetStarted}
