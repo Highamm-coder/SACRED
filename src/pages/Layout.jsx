@@ -152,6 +152,10 @@ export default function Layout({ children, currentPageName }) {
     );
   };
 
+  // Pages that manage their own full-screen layout and nav
+  const fullscreenPages = ['Landing', 'Login', 'Signup', 'Education'];
+  const isFullscreen = fullscreenPages.includes(currentPageName);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <style>{`
@@ -168,17 +172,19 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Sidebar - Only show for authenticated paid users */}
-      <Sidebar 
-        user={user}
-        isLoading={isLoading}
-        mobileMenuOpen={mobileMenuOpen} 
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+      {/* Sidebar - Only show for authenticated paid users on non-fullscreen pages */}
+      {!isFullscreen && (
+        <Sidebar
+          user={user}
+          isLoading={isLoading}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+      )}
 
       {/* Main Content Area - Properly aligned with sidebar */}
       <div className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
-        user && user.has_paid 
+        !isFullscreen && user && user.has_paid
           ? 'lg:ml-[280px]' // Account for fixed sidebar width on desktop
           : ''
       }`}>
@@ -186,8 +192,8 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        {/* Footer - Now properly aligned with content area */}
-        <footer className="bg-white border-t border-[#E6D7C9] py-12 px-6 md:px-10 mt-auto relative z-10">
+        {/* Footer - hidden on fullscreen pages that manage their own layout */}
+        {isFullscreen ? null : <footer className="bg-white border-t border-[#E6D7C9] py-12 px-6 md:px-10 mt-auto relative z-10">
           <div className="max-w-6xl mx-auto">
           {user ? (
             <div className="grid md:grid-cols-4 gap-8">
@@ -290,7 +296,7 @@ export default function Layout({ children, currentPageName }) {
             </p>
           </div>
           </div>
-        </footer>
+        </footer>}
       </div>
     </div>
   );
