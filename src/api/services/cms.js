@@ -211,7 +211,7 @@ export class BlogPostService extends CMSService {
 // Education Resources Service
 export class EducationResourceService extends CMSService {
   constructor() {
-    super('resources');
+    super('education_resources');
   }
 
   // Override create to handle slug generation

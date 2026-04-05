@@ -57,6 +57,9 @@ import BlogEditor from "./BlogEditor";
 
 import ResourceEditor from "./ResourceEditor";
 
+// Blog routes — SSR-rendered on Vercel for bots/direct loads, React Router for in-app navigation
+// ResourcePage handles /blog/:slug via useParams()
+
 // PartnerInvite removed in single-account migration
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
@@ -203,6 +206,8 @@ function PagesContent() {
                 <Route path="/AdminCMS" element={<AdminCMS />} />
                 
                 <Route path="/ResourcePage" element={<ResourcePage />} />
+                <Route path="/blog/:slug" element={<ResourcePage />} />
+                <Route path="/blog" element={<Education />} />
                 
                 <Route path="/BlogEditor" element={<BlogEditor />} />
                 

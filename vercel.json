@@ -1,9 +1,9 @@
 {
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/blog/:slug", "destination": "/api/blog/[slug]?slug=:slug" },
+    { "source": "/blog", "destination": "/api/blog/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {

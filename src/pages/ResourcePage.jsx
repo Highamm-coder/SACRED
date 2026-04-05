@@ -1,471 +1,236 @@
 import React, { useState, useEffect } from 'react';
 import { educationResourceService } from '@/api/services/cms';
 import { format } from 'date-fns';
-import { Loader2, Calendar, User as UserIcon, ArrowLeft, ExternalLink, Clock, ChevronRight, BookOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Loader2, Calendar, User as UserIcon, ArrowLeft } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-// Helper function to format content for better readability
-const formatContent = (content) => {
-  if (!content) return '';
-  
-  // If content already contains HTML tags, return as-is
-  if (content.includes('<p>') || content.includes('<h1>') || content.includes('<h2>')) {
-    return content;
-  }
-  
-  // If it's plain text, format it with proper paragraphs and line breaks
-  return content
-    .split('\n\n') // Split on double line breaks for paragraphs
-    .map(paragraph => paragraph.trim())
-    .filter(paragraph => paragraph.length > 0)
-    .map(paragraph => {
-      // Handle single line breaks within paragraphs
-      const formattedParagraph = paragraph.replace(/\n/g, '<br />');
-      return `<p>${formattedParagraph}</p>`;
-    })
-    .join('');
-};
+const SITE_URL = 'https://www.sacredonline.co';
+const DEFAULT_OG_IMAGE = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg';
+
+// Replace any h1 tags in rich-text content with h2 — the post title is the only H1
+function sanitizeContent(html) {
+  if (!html) return '';
+  return html
+    .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
+}
+
+// Inject per-post meta tags into document.head
+function setMeta(post) {
+  const seoTitle = post.seo_title || `${post.title} | SACRED`;
+  const seoDesc = post.seo_description || '';
+  const ogImage = post.featured_image || DEFAULT_OG_IMAGE;
+  const canonicalUrl = `${SITE_URL}/blog/${post.slug}`;
+  const publishedAt = post.published_at || post.created_at;
+
+  document.title = seoTitle;
+
+  const set = (attr, key, val) => {
+    let el = document.querySelector(`meta[${attr}="${key}"]`);
+    if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+    el.setAttribute('content', val);
+  };
+
+  set('name', 'description', seoDesc);
+  set('property', 'og:type', 'article');
+  set('property', 'og:url', canonicalUrl);
+  set('property', 'og:title', seoTitle);
+  set('property', 'og:description', seoDesc);
+  set('property', 'og:image', ogImage);
+  set('property', 'og:site_name', 'SACRED');
+  set('name', 'twitter:card', 'summary_large_image');
+  set('name', 'twitter:title', seoTitle);
+  set('name', 'twitter:description', seoDesc);
+  set('name', 'twitter:image', ogImage);
+  if (publishedAt) set('property', 'article:published_time', publishedAt);
+  if (post.updated_at) set('property', 'article:modified_time', post.updated_at);
+
+  // Canonical
+  let canon = document.querySelector('link[rel="canonical"]');
+  if (!canon) { canon = document.createElement('link'); canon.setAttribute('rel', 'canonical'); document.head.appendChild(canon); }
+  canon.setAttribute('href', canonicalUrl);
+
+  // JSON-LD schema
+  const schemaId = 'sacred-article-schema';
+  let schemaEl = document.getElementById(schemaId);
+  if (!schemaEl) { schemaEl = document.createElement('script'); schemaEl.id = schemaId; schemaEl.type = 'application/ld+json'; document.head.appendChild(schemaEl); }
+  schemaEl.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: seoDesc,
+    image: ogImage,
+    author: { '@type': 'Person', name: post.author || 'Matt Higham' },
+    publisher: { '@type': 'Organization', name: 'SACRED', url: SITE_URL },
+    datePublished: publishedAt,
+    dateModified: post.updated_at || publishedAt,
+    url: canonicalUrl,
+  });
+}
 
 export default function ResourcePage() {
   const [resource, setResource] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Support both /blog/:slug (React Router param) and ?slug= (legacy query param)
+  const params = useParams();
+
   useEffect(() => {
-    const fetchResource = async () => {
+    const fetch = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const slug = urlParams.get('slug');
-        const id = urlParams.get('id'); // fallback for old links
-        
-        if (!slug && !id) {
-          setError('No resource specified.');
-          setIsLoading(false);
-          return;
-        }
+        const slug = params.slug || new URLSearchParams(window.location.search).get('slug');
+        const id = new URLSearchParams(window.location.search).get('id');
 
-        let resourceData;
-        if (slug) {
-          resourceData = await educationResourceService.getBySlug(slug);
-        } else {
-          resourceData = await educationResourceService.get(id);
-        }
+        if (!slug && !id) { setError('No article specified.'); setIsLoading(false); return; }
 
-        if (resourceData) {
-          console.log('📚 Resource loaded:', resourceData);
-          setResource(resourceData);
+        const data = slug
+          ? await educationResourceService.getBySlug(slug)
+          : await educationResourceService.get(id);
+
+        if (data) {
+          setResource(data);
+          setMeta(data);
         } else {
-          setError('Resource not found.');
+          setError('Article not found.');
         }
-      } catch (err) {
-        console.error('Error fetching resource:', err);
-        setError('Failed to load the resource.');
+      } catch {
+        setError('Failed to load the article.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchResource();
-  }, []);
+    fetch();
+  }, [params.slug]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#E6D7C9]">
-        <div className="flex flex-col justify-center items-center h-screen">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-[#E6D7C9]"></div>
-                <Loader2 className="w-16 h-16 animate-spin text-[#2F4F3F] absolute top-0 left-0" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-sacred-bold text-[#2F4F3F] mb-2">Loading Resource</h3>
-                <p className="text-sm text-[#6B5B73] font-sacred">Please wait while we fetch your content...</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#F5F1EB] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2F4F3F]" />
       </div>
     );
   }
 
   if (error || !resource) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#E6D7C9] flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8">
-            <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-[#C4756B] to-[#B86761] rounded-full flex items-center justify-center">
-              <BookOpen className="w-10 h-10 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-sacred-bold text-[#2F4F3F] mb-4">
-              {error || 'Resource Not Found'}
-            </CardTitle>
-            <p className="text-lg text-[#6B5B73] font-sacred leading-relaxed">
-              We couldn't load the resource you were looking for. It might have been moved, or there was a problem retrieving it.
-            </p>
-          </CardHeader>
-          <CardContent className="text-center pb-8">
-            <Link to={createPageUrl('Education')}>
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-[#2F4F3F] to-[#1F3F2F] hover:from-[#1F3F2F] hover:to-[#0F2F1F] text-white font-sacred shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Education
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[#F5F1EB] flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-[#6B5B73] font-sacred text-lg">{error || 'Article not found'}</p>
+        <Link to="/blog" className="text-[#C4756B] font-sacred-bold hover:underline flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back to all articles
+        </Link>
       </div>
     );
   }
 
-  // If resource has external URL and no content, redirect to external URL
-  if (resource.external_url && !resource.content) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#E6D7C9] flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8">
-            <Badge className="bg-gradient-to-r from-[#C4756B] to-[#B86761] text-white font-sacred text-sm mb-6 capitalize shadow-lg">
-              {resource.resource_type}
-            </Badge>
-            <CardTitle className="text-3xl md:text-4xl font-sacred-bold text-[#2F4F3F] mb-4 leading-tight">
+  const publishedAt = resource.published_at || resource.created_at;
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+        .font-sacred { font-family: 'Cormorant Garamond', serif; font-weight: 300; }
+        .font-sacred-bold { font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+        .font-sacred-medium { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
+        .post-content h2 { font-size: 1.75rem; font-weight: 600; color: #2F4F3F; margin: 2.5rem 0 1rem; line-height: 1.2; font-family: 'Cormorant Garamond', serif; }
+        .post-content h3 { font-size: 1.4rem; font-weight: 600; color: #2F4F3F; margin: 2rem 0 0.75rem; font-family: 'Cormorant Garamond', serif; }
+        .post-content p { font-size: 1.15rem; line-height: 1.85; color: #6B5B73; margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; }
+        .post-content ul, .post-content ol { padding-left: 1.75rem; margin-bottom: 1.5rem; color: #6B5B73; font-size: 1.15rem; line-height: 1.85; font-family: 'Cormorant Garamond', serif; }
+        .post-content ul { list-style-type: disc; }
+        .post-content ol { list-style-type: decimal; }
+        .post-content li { margin-bottom: 0.6rem; }
+        .post-content blockquote { border-left: 4px solid #C4756B; padding: 1rem 1.5rem; margin: 2rem 0; background: #fff; border-radius: 0 8px 8px 0; font-style: italic; font-size: 1.2rem; color: #6B5B73; font-family: 'Cormorant Garamond', serif; }
+        .post-content strong { font-weight: 600; color: #2F4F3F; }
+        .post-content a { color: #C4756B; text-decoration: underline; }
+        .post-content img { max-width: 100%; border-radius: 8px; margin: 2rem 0; }
+      `}</style>
+
+      <div style={{ background: '#141E16' }}>
+        {/* Hero */}
+        <div className="pt-16 pb-14 px-6 md:px-10">
+          <div className="max-w-3xl mx-auto">
+            <Link to="/blog" className="inline-flex items-center gap-2 text-white/40 hover:text-white/70 font-sacred text-sm mb-10 transition-colors">
+              <ArrowLeft className="w-4 h-4" /> All articles
+            </Link>
+
+            <span className="font-sacred-bold text-[#C4756B] text-xs tracking-[0.22em] uppercase block mb-4 capitalize">
+              {resource.resource_type || 'Article'}
+            </span>
+
+            {/* Single H1 on this page */}
+            <h1
+              className="font-sacred-medium italic text-white leading-[1.05] mb-6"
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
+            >
               {resource.title}
-            </CardTitle>
-            <p className="text-lg text-[#6B5B73] font-sacred leading-relaxed">
-              This resource is hosted externally. Click the button below to visit it in a new tab.
-            </p>
-          </CardHeader>
-          <CardContent className="text-center pb-8">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            </h1>
+
+            <div className="flex items-center gap-6 text-white/40 font-sacred text-sm">
+              {resource.author && (
+                <span className="flex items-center gap-1.5">
+                  <UserIcon className="w-3.5 h-3.5" />
+                  {resource.author}
+                </span>
+              )}
+              {publishedAt && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {format(new Date(publishedAt), 'MMMM d, yyyy')}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured image — bridges dark/cream */}
+      {resource.featured_image && (
+        <div className="max-w-3xl mx-auto px-6 md:px-10 -mt-6 mb-10 relative z-10">
+          <img
+            src={resource.featured_image}
+            alt={resource.title}
+            className="w-full rounded-xl shadow-xl"
+            loading="eager"
+          />
+        </div>
+      )}
+
+      {/* Body */}
+      <div style={{ background: '#F5F1EB' }} className={resource.featured_image ? '' : 'pt-10'}>
+        <div className="max-w-3xl mx-auto px-6 md:px-10 py-12 pb-20">
+          {/* Description (intro) */}
+          {resource.description && (
+            <div
+              className="font-sacred text-xl italic text-[#6B5B73] leading-relaxed border-b border-[#E6D7C9] pb-8 mb-10"
+              dangerouslySetInnerHTML={{ __html: sanitizeContent(resource.description) }}
+            />
+          )}
+
+          {/* Main content */}
+          {resource.content && (
+            <div
+              className="post-content"
+              dangerouslySetInnerHTML={{ __html: sanitizeContent(resource.content) }}
+            />
+          )}
+
+          {resource.external_url && (
+            <div className="text-center mt-12 pt-8 border-t border-[#E6D7C9]">
               <a
                 href={resource.external_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#C4756B] to-[#B86761] hover:from-[#B86761] hover:to-[#A85651] text-white rounded-lg font-sacred transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-lg"
+                className="inline-flex items-center px-8 py-3 bg-[#C4756B] hover:bg-[#B86761] text-white rounded-full font-sacred-bold transition-colors"
               >
-                <ExternalLink className="w-5 h-5 mr-3" />
-                Visit Resource
+                Visit resource →
               </a>
-              <Link to={createPageUrl('Education')}>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="border-2 border-[#6B5B73] text-[#6B5B73] hover:bg-[#6B5B73] hover:text-white font-sacred transition-all duration-300 shadow-md hover:shadow-lg"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back to Education
-                </Button>
-              </Link>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+          )}
 
-  return (
-    <>
-      <style jsx global>{`
-        .resource-content {
-          font-family: 'Inter', system-ui, sans-serif;
-        }
-        
-        .resource-content h1 {
-          font-size: 2.25rem;
-          font-weight: 700;
-          color: #2F4F3F;
-          margin-bottom: 1.5rem;
-          margin-top: 2.5rem;
-          line-height: 1.2;
-          font-family: inherit;
-        }
-        
-        .resource-content h2 {
-          font-size: 1.875rem;
-          font-weight: 600;
-          color: #2F4F3F;
-          margin-bottom: 1.25rem;
-          margin-top: 2rem;
-          line-height: 1.3;
-          font-family: inherit;
-        }
-        
-        .resource-content h3 {
-          font-size: 1.625rem;
-          font-weight: 600;
-          color: #2F4F3F;
-          margin-bottom: 1.25rem;
-          margin-top: 2rem;
-          line-height: 1.4;
-          font-family: inherit;
-        }
-        
-        .resource-content p {
-          font-size: 1.1875rem;
-          line-height: 1.8;
-          color: #6B5B73;
-          margin-bottom: 1.75rem;
-          font-family: inherit;
-        }
-        
-        .resource-content ul, .resource-content ol {
-          margin: 2rem 0;
-          padding-left: 2rem;
-          color: #6B5B73;
-          font-size: 1.1875rem;
-          line-height: 1.8;
-        }
-        
-        .resource-content ul {
-          list-style-type: disc;
-          list-style-position: outside;
-        }
-        
-        .resource-content ol {
-          list-style-type: decimal;
-          list-style-position: outside;
-        }
-        
-        .resource-content li {
-          margin-bottom: 1rem;
-          display: list-item;
-          padding-left: 0.5rem;
-        }
-        
-        .resource-content a {
-          color: #C4756B;
-          text-decoration: underline;
-          font-weight: 500;
-          transition: all 0.2s ease;
-        }
-        
-        .resource-content a:hover {
-          color: #B86761;
-          text-decoration-thickness: 2px;
-        }
-        
-        .resource-content blockquote {
-          border-left: 5px solid #C4756B;
-          margin: 3rem 0;
-          font-style: italic;
-          color: #6B5B73;
-          font-size: 1.375rem;
-          background: linear-gradient(135deg, #F5F1EB 0%, #E6D7C9 100%);
-          padding: 2rem;
-          border-radius: 12px;
-          position: relative;
-          box-shadow: 0 4px 20px rgba(196, 117, 107, 0.1);
-        }
-        
-        .resource-content blockquote::before {
-          content: '"';
-          font-size: 4rem;
-          color: #C4756B;
-          position: absolute;
-          top: -0.5rem;
-          left: 1rem;
-          font-family: serif;
-          opacity: 0.3;
-        }
-        
-        .resource-content strong {
-          font-weight: 600;
-          color: #2F4F3F;
-          background: linear-gradient(135deg, rgba(196, 117, 107, 0.1) 0%, rgba(184, 103, 97, 0.1) 100%);
-          padding: 0.125rem 0.25rem;
-          border-radius: 4px;
-        }
-        
-        .resource-content em {
-          font-style: italic;
-          color: #6B5B73;
-        }
-        
-        .resource-content code {
-          background: linear-gradient(135deg, #F5F1EB 0%, #E6D7C9 100%);
-          padding: 0.375rem 0.75rem;
-          border-radius: 6px;
-          font-size: 0.875rem;
-          color: #2F4F3F;
-          font-family: 'Monaco', 'Consolas', monospace;
-          border: 1px solid rgba(196, 117, 107, 0.2);
-        }
-        
-        .resource-content pre {
-          background: linear-gradient(135deg, #F5F1EB 0%, #E6D7C9 100%);
-          padding: 2rem;
-          border-radius: 12px;
-          overflow-x: auto;
-          margin: 2rem 0;
-          border: 1px solid rgba(196, 117, 107, 0.2);
-          box-shadow: 0 4px 20px rgba(196, 117, 107, 0.1);
-        }
-        
-        .resource-content pre code {
-          background: none;
-          padding: 0;
-          border: none;
-        }
-        
-        .resource-content img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 12px;
-          margin: 3rem 0;
-          box-shadow: 0 8px 32px rgba(47, 79, 63, 0.15);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .resource-content img:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 40px rgba(47, 79, 63, 0.2);
-        }
-
-        .progress-bar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 3px;
-          background: linear-gradient(to right, #C4756B, #B86761);
-          z-index: 1000;
-          transition: width 0.1s ease;
-        }
-        
-        @media (max-width: 768px) {
-          .resource-content h1 {
-            font-size: 2rem;
-          }
-          
-          .resource-content h2 {
-            font-size: 1.75rem;
-          }
-          
-          .resource-content h3 {
-            font-size: 1.5rem;
-          }
-          
-          .resource-content p {
-            font-size: 1.125rem;
-          }
-        }
-      `}</style>
-
-      {/* Main Content */}
-      <div className="bg-white min-h-screen">
-        
-        {/* Clean Hero Header */}
-        <div className="bg-[#F5F1EB] py-12">
-          <div className="max-w-4xl mx-auto px-6">
-            {/* Simple Back Button */}
-            <div className="mb-8">
-              <Link to={createPageUrl('Education')}>
-                <Button variant="ghost" className="text-[#6B5B73] hover:bg-white/50 font-sacred">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Education
-                </Button>
-              </Link>
-            </div>
-
-            {/* Clean Resource Header */}
-            <div className="text-center">
-              <Badge className="bg-[#C4756B] text-white font-sacred text-sm mb-4 capitalize">
-                {resource.resource_type}
-              </Badge>
-
-              <h1 className="text-3xl md:text-4xl font-sacred-bold text-[#2F4F3F] leading-tight mb-4">
-                {resource.title}
-              </h1>
-              
-              <div className="flex justify-center items-center gap-6 text-[#6B5B73] font-sacred text-sm">
-                {resource.author && (
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-4 h-4" />
-                    <span>{resource.author}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {resource.created_at && !isNaN(new Date(resource.created_at)) 
-                      ? format(new Date(resource.created_at), 'MMMM d, yyyy')
-                      : 'Date unavailable'
-                    }
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Area - White Background */}
-        <div className="bg-white">
-          <div className="max-w-4xl mx-auto px-6 py-12">
-            
-            {/* Featured Image */}
-            {resource.featured_image && (
-              <div className="mb-8 rounded-lg overflow-hidden shadow-sm">
-                <img 
-                  src={resource.featured_image} 
-                  alt={resource.title} 
-                  className="w-full h-auto object-cover" 
-                  loading="lazy" 
-                  decoding="async" 
-                />
-              </div>
-            )}
-
-            {/* Resource Description */}
-            {resource.description && (
-              <div className="mb-8 text-lg text-[#6B5B73] font-sacred leading-relaxed italic text-center border-b border-[#E6D7C9] pb-8">
-                <div 
-                  className="resource-content"
-                  dangerouslySetInnerHTML={{ __html: resource.description }}
-                />
-              </div>
-            )}
-
-            {/* Resource Content */}
-            {resource.content && (
-              <div 
-                className="resource-content max-w-none"
-                dangerouslySetInnerHTML={{ __html: resource.content }}
-              />
-            )}
-
-            {/* External Link */}
-            {resource.external_url && (
-              <div className="text-center mt-12 pt-8 border-t border-[#E6D7C9]">
-                <p className="text-[#6B5B73] font-sacred mb-6">
-                  This resource is available on an external website.
-                </p>
-                <a
-                  href={resource.external_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-8 py-4 bg-[#C4756B] hover:bg-[#B86761] text-white rounded-lg font-sacred transition-colors text-lg"
-                >
-                  <ExternalLink className="w-5 h-5 mr-3" />
-                  Visit Resource
-                </a>
-              </div>
-            )}
-
-            {/* Back to Education */}
-            <div className="text-center mt-16 pt-8 border-t border-[#E6D7C9]">
-              <Link to={createPageUrl('Education')}>
-                <Button 
-                  variant="outline" 
-                  className="border-[#C4756B] text-[#C4756B] hover:bg-[#C4756B] hover:text-white font-sacred px-8 py-3"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to All Resources
-                </Button>
-              </Link>
-            </div>
+          <div className="mt-16 pt-8 border-t border-[#E6D7C9]">
+            <Link to="/blog" className="inline-flex items-center gap-2 text-[#C4756B] font-sacred-bold hover:underline">
+              <ArrowLeft className="w-4 h-4" /> Back to all articles
+            </Link>
           </div>
         </div>
       </div>

@@ -37,7 +37,9 @@ export default function ResourceEditor() {
     featured_image: '',
     external_url: '',
     author: '',
-    order_index: 0
+    order_index: 0,
+    seo_title: '',
+    seo_description: '',
   });
 
   const resourceTypes = [
@@ -70,7 +72,9 @@ export default function ResourceEditor() {
         featured_image: resource.featured_image || '',
         external_url: resource.external_url || '',
         author: resource.author || '',
-        order_index: resource.order_index || 0
+        order_index: resource.order_index || 0,
+        seo_title: resource.seo_title || '',
+        seo_description: resource.seo_description || '',
       });
     } catch (error) {
       console.error('Error loading resource:', error);
@@ -250,7 +254,7 @@ export default function ResourceEditor() {
                       placeholder="url-friendly-slug"
                       className="font-mono text-sm"
                     />
-                    <p className="text-xs text-[#6B5B73]">This will be the URL: /resources/{formData.slug}</p>
+                    <p className="text-xs text-[#6B5B73]">URL: sacredonline.co/blog/{formData.slug || 'your-slug-here'}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -427,6 +431,41 @@ export default function ResourceEditor() {
                       onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                       placeholder="Author name or organization"
                     />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* SEO */}
+              <Card className="border-[#C4756B]/20">
+                <CardHeader>
+                  <CardTitle className="font-sacred text-[#2F4F3F]">SEO</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="font-sacred text-sm">Title Tag</Label>
+                    <Input
+                      value={formData.seo_title}
+                      onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                      placeholder={formData.title ? `${formData.title} | SACRED` : 'Post Title | SACRED'}
+                      maxLength={70}
+                    />
+                    <p className="text-xs text-[#6B5B73]">
+                      {formData.seo_title.length}/70 chars — leave blank to use post title + " | SACRED"
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-sacred text-sm">Meta Description</Label>
+                    <textarea
+                      value={formData.seo_description}
+                      onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                      placeholder="150–160 character description for search results..."
+                      maxLength={160}
+                      rows={3}
+                      className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring font-sacred"
+                    />
+                    <p className={`text-xs ${formData.seo_description.length > 160 ? 'text-red-500' : 'text-[#6B5B73]'}`}>
+                      {formData.seo_description.length}/160 chars — aim for 150–160
+                    </p>
                   </div>
                 </CardContent>
               </Card>

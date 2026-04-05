@@ -23,7 +23,7 @@ function FeaturedCard({ resource }) {
   const excerpt = stripHtmlTags(resource.description);
   return (
     <Link
-      to={createPageUrl(`ResourcePage?slug=${resource.slug}`)}
+      to={`/blog/${resource.slug}`}
       className="group block"
     >
       <div className="grid md:grid-cols-2 gap-0 overflow-hidden rounded-2xl" style={{ background: '#1E2D22' }}>
@@ -76,7 +76,7 @@ function ArticleCard({ resource }) {
   const excerpt = stripHtmlTags(resource.description);
   return (
     <Link
-      to={createPageUrl(`ResourcePage?slug=${resource.slug}`)}
+      to={`/blog/${resource.slug}`}
       className="group block"
     >
       <div className="overflow-hidden rounded-xl border border-[#E6D7C9] bg-white hover:shadow-md transition-shadow duration-300">
