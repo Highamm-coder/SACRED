@@ -33,6 +33,8 @@ import {
   X
 } from 'lucide-react';
 import { reflectionQuestionsService } from '@/api/services/cms';
+import { assessmentService } from '@/api/services/assessment';
+import { Switch } from '@/components/ui/switch';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function ReflectionManagement() {
@@ -42,6 +44,8 @@ export default function ReflectionManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [reflectionsEnabled, setReflectionsEnabled] = useState(false);
+  const [togglingEnabled, setTogglingEnabled] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -53,7 +57,29 @@ export default function ReflectionManagement() {
 
   useEffect(() => {
     loadQuestions();
+    loadReflectionsEnabled();
   }, [statusFilter]);
+
+  const loadReflectionsEnabled = async () => {
+    try {
+      const config = await assessmentService.getConfig('reflections_enabled');
+      setReflectionsEnabled(config?.config_value === true || config?.config_value === 'true');
+    } catch {
+      setReflectionsEnabled(false);
+    }
+  };
+
+  const handleToggleEnabled = async (value) => {
+    try {
+      setTogglingEnabled(true);
+      await assessmentService.setConfig('reflections_enabled', value, 'Controls whether Sacred Reflections is visible to users');
+      setReflectionsEnabled(value);
+    } catch (error) {
+      console.error('Failed to update reflections toggle:', error);
+    } finally {
+      setTogglingEnabled(false);
+    }
+  };
 
   const loadQuestions = async () => {
     try {
@@ -194,8 +220,21 @@ export default function ReflectionManagement() {
             Manage thoughtful questions for Sacred Reflections
           </p>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-sacred text-[#6B5B73]">Visible to users</span>
+            <Switch
+              checked={reflectionsEnabled}
+              onCheckedChange={handleToggleEnabled}
+              disabled={togglingEnabled}
+            />
+            <Badge className={reflectionsEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
+              {reflectionsEnabled ? 'On' : 'Off'}
+            </Badge>
+          </div>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="bg-[#C4756B] hover:bg-[#B86761]">
               <Plus className="w-4 h-4 mr-2" />
@@ -273,6 +312,7 @@ export default function ReflectionManagement() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Assessment, User } from '@/api/entities';
+import { Assessment, User, assessmentService } from '@/api/entities';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [assessments, setAssessments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingError, setLoadingError] = useState(null);
+  const [reflectionsEnabled, setReflectionsEnabled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,6 +45,14 @@ export default function DashboardPage() {
         if (!currentUser.onboarding_completed) {
           navigate(createPageUrl('Onboarding'));
           return;
+        }
+
+        // Check if reflections feature is enabled
+        try {
+          const config = await assessmentService.getConfig('reflections_enabled');
+          setReflectionsEnabled(config?.config_value === true || config?.config_value === 'true');
+        } catch {
+          setReflectionsEnabled(false);
         }
 
         // Get all user's assessments (parallel assessment system)
@@ -288,7 +297,7 @@ export default function DashboardPage() {
                     )}
 
                     {/* Sacred Reflections Card */}
-                    <Link to={createPageUrl('OpenEndedStart')} className="block">
+                    {reflectionsEnabled && <Link to={createPageUrl('OpenEndedStart')} className="block">
                       <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[220px] xl:h-48 bg-gradient-to-br from-[#8B7A9B] to-[#7A6B8B] rounded-xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation active:scale-[0.98]">
                         <div className="absolute inset-0 bg-black/20"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
@@ -309,7 +318,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                    </Link>
+                    </Link>}
                   </div>
                 </div>
 
