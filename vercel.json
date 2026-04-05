@@ -8,7 +8,7 @@
     { "source": "/blog/:slug", "destination": "/api/blog/[slug]?slug=:slug" },
     { "source": "/blog", "destination": "/api/blog/index" },
     { "source": "/", "destination": "/api/landing" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/app.html" }
   ],
   "headers": [
     {
