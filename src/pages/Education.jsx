@@ -210,8 +210,8 @@ export default function EducationPage() {
             SACRED
           </Link>
           <div className="flex items-center gap-6">
-            <Link to={createPageUrl('Education')} className="nav-link font-sacred text-sm transition-colors duration-300">
-              Education
+            <Link to="/blog" className="nav-link font-sacred text-sm transition-colors duration-300">
+              Blog
             </Link>
             <Link to={createPageUrl('Login')} className="nav-link font-sacred text-sm transition-colors duration-300">
               Sign in

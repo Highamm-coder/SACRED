@@ -148,10 +148,10 @@ export default function LandingPage() {
           <div className="nav-logo text-2xl font-sacred tracking-widest transition-colors duration-300">SACRED</div>
           <div className="flex items-center gap-6">
             <a
-              href={createPageUrl('Education')}
+              href="/blog"
               className="nav-link font-sacred text-sm transition-colors duration-300"
             >
-              Education
+              Blog
             </a>
             <button
               onClick={handleSignIn}
