@@ -121,8 +121,7 @@ export const User = {
 
   // Sign out
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    handleSupabaseError(error);
+    await supabase.auth.signOut().catch(() => {});
   },
 
   // Update user profile

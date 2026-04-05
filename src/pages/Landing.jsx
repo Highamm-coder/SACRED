@@ -87,7 +87,7 @@ export default function LandingPage() {
   }, []);
 
   const handleGetStarted = () => {
-    window.location.href = createPageUrl('Login');
+    window.location.href = createPageUrl('Signup');
   };
 
   const handleSignIn = () => {

@@ -45,6 +45,7 @@ import PaymentSuccess from "./PaymentSuccess";
 import Shop from "./Shop";
 
 import Login from "./Login";
+import Signup from "./Signup";
 
 import EmailTest from "./EmailTest";
 
@@ -107,6 +108,8 @@ const PAGES = {
     Shop: Shop,
     
     Login: Login,
+
+    Signup: Signup,
     
     EmailTest: EmailTest,
     
@@ -192,6 +195,8 @@ function PagesContent() {
                 <Route path="/Shop" element={<Shop />} />
                 
                 <Route path="/Login" element={<Login />} />
+
+                <Route path="/Signup" element={<Signup />} />
                 
                 <Route path="/EmailTest" element={<EmailTest />} />
                 

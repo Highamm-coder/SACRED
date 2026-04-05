@@ -47,7 +47,7 @@ export default function Layout({ children, currentPageName }) {
       setUser(currentUser);
 
       // ENTERPRISE FIX: Payment validation now uses refreshed user data
-      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite'];
+      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite', 'Login', 'Signup'];
       if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
         // Allow admin users to bypass payment requirement
         if (currentUser.role === 'admin') {
@@ -81,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     await User.signOut();
     setUser(null);
-    window.location.href = createPageUrl('Home');
+    window.location.href = createPageUrl('Landing');
   };
 
   const handleAuthRedirect = () => {

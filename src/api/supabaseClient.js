@@ -25,9 +25,9 @@ export const handleSupabaseError = (error) => {
 
 // Helper function to get current user session
 export const getCurrentUser = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  handleSupabaseError(error);
-  return session?.user || null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return user;
 };
 
 // Helper function to get user profile
