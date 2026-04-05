@@ -340,9 +340,9 @@ export default function AssessmentManagement() {
                             </p>
                           )}
                           
-                          {question.discussion_question && (
+                          {question.discussion_question?.question_text && (
                             <p className="text-sm text-[#C4756B] font-sacred mb-2 p-2 bg-[#F5F1EB] rounded">
-                              💬 Discussion: {question.discussion_question}
+                              💬 Discussion: {question.discussion_question.question_text}
                             </p>
                           )}
                           
