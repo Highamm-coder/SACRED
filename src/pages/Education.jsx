@@ -99,7 +99,7 @@ export default function EducationPage() {
 
   if (isLoading) {
     return (
-      <AuthWrapper requireAuth={true}>
+      <AuthWrapper requireAuth={false}>
         <div className="flex justify-center items-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-[#2F4F3F]" />
         </div>
@@ -108,7 +108,7 @@ export default function EducationPage() {
   }
 
   return (
-    <AuthWrapper requireAuth={true}>
+    <AuthWrapper requireAuth={false}>
       <div className="bg-white min-h-screen">
         {/* Hero Header - Beige Background */}
         <div className="bg-[#F5F1EB] py-16">

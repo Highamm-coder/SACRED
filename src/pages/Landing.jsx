@@ -1,8 +1,9 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, useRef, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { createPageUrl } from '@/utils';
 import { ArrowRight, Check } from 'lucide-react';
 import HeroSection from '../components/landing/HeroSection';
+import ConvergingLines from '../components/landing/ConvergingLines';
 
 const HowItWorksSection = lazy(() => import('../components/landing/HowItWorksSection'));
 const ThisIsForYouSection = lazy(() => import('../components/landing/ThisIsForYouSection'));
@@ -70,6 +71,20 @@ export default function LandingPage() {
 
   }, []);
 
+  const headerRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (headerRef.current) {
+        const scrolled = window.scrollY > window.innerHeight * 0.7;
+        headerRef.current.classList.toggle('nav-scrolled', scrolled);
+        headerRef.current.classList.toggle('nav-at-top', !scrolled);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const handleGetStarted = () => {
     window.location.href = createPageUrl('Login');
   };
@@ -79,23 +94,23 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] via-[#F8F4EE] to-[#F2EDE7]">
+    <div className="min-h-screen" style={{ background: '#141E16' }}>
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
         .font-sacred {
           font-family: 'Cormorant Garamond', serif;
           font-weight: 300;
-          letter-spacing: 0.08em;
+          letter-spacing: 0;
         }
         .font-sacred-bold {
           font-family: 'Cormorant Garamond', serif;
-          font-weight: 400;
-          letter-spacing: 0.08em;
+          font-weight: 600;
+          letter-spacing: 0;
         }
         .font-sacred-medium {
           font-family: 'Cormorant Garamond', serif;
           font-weight: 500;
-          letter-spacing: 0.08em;
+          letter-spacing: 0;
         }
         .soft-shadow {
           box-shadow: 0 10px 40px -10px rgba(47, 79, 63, 0.1);
@@ -103,48 +118,99 @@ export default function LandingPage() {
         .gentle-border {
           border: 1px solid rgba(230, 215, 201, 0.3);
         }
+        .nav-at-top {
+          background: transparent;
+          box-shadow: none;
+          transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-at-top .nav-logo { color: rgba(255,255,255,0.9); }
+        .nav-at-top .nav-link { color: rgba(255,255,255,0.75); }
+        .nav-at-top .nav-link:hover { color: rgba(255,255,255,1); }
+
+        .nav-scrolled {
+          background: rgba(245,241,235,0.95);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 1px 12px rgba(0,0,0,0.08);
+          transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-scrolled .nav-logo { color: #2F4F3F; }
+        .nav-scrolled .nav-link { color: #2F4F3F; opacity: 0.75; }
+        .nav-scrolled .nav-link:hover { opacity: 1; color: #C4756B; }
       `}</style>
 
-      {/* Navigation */}
-      <header className="absolute top-0 left-0 right-0 z-20 py-4 px-4 md:py-6 md:px-10">
+      {/* Sticky nav — appears after scrolling past hero */}
+      <header
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-20 py-4 px-6 md:px-10 nav-at-top"
+      >
         <nav className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className="text-2xl md:text-4xl font-sacred tracking-widest text-[#2F4F3F]">
-            SACRED
-          </div>
-          
-          <div className="flex items-center gap-3 md:gap-6">
-            <div className="flex gap-2 md:gap-3">
-              <Button
-                onClick={handleSignIn}
-                variant="outline"
-                className="border-[#2F4F3F]/20 text-[#2F4F3F] hover:bg-[#2F4F3F] hover:text-white font-sacred-bold rounded-full px-3 md:px-6 text-sm md:text-base transition-all duration-300">
-                Sign In
-              </Button>
-              <Button
-                onClick={handleGetStarted}
-                className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-3 md:px-6 text-sm md:text-base soft-shadow transition-all duration-300 hover:scale-105">
-                Begin Assessment
-              </Button>
-            </div>
+          <div className="nav-logo text-2xl font-sacred tracking-widest transition-colors duration-300">SACRED</div>
+          <div className="flex items-center gap-6">
+            <a
+              href={createPageUrl('Education')}
+              className="nav-link font-sacred text-sm transition-colors duration-300"
+            >
+              Education
+            </a>
+            <button
+              onClick={handleSignIn}
+              className="nav-link font-sacred text-sm transition-colors duration-300"
+            >
+              Sign in
+            </button>
+            <Button
+              onClick={handleGetStarted}
+              className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-6 text-sm transition-all duration-300"
+            >
+              Begin Assessment
+            </Button>
           </div>
         </nav>
       </header>
       
       <main>
-        <HeroSection handleGetStarted={handleGetStarted} />
-        
-        <Suspense fallback={<SectionLoader />}>
-          <HowItWorksSection handleGetStarted={handleGetStarted} />
-          <ThisIsForYouSection handleGetStarted={handleGetStarted} />
-          <WhyUnpreparedSection handleGetStarted={handleGetStarted} />
-          <WhatYouGainSection handleGetStarted={handleGetStarted} />
-          <WhatYouExploreSection handleGetStarted={handleGetStarted} />
-          <PrivacySection handleGetStarted={handleGetStarted} />
-          <TaglineSection handleGetStarted={handleGetStarted} />
-          <TestimonialsSection handleGetStarted={handleGetStarted} />
-          <InvestmentSection handleGetStarted={handleGetStarted} />
-          <FinalCtaSection handleGetStarted={handleGetStarted} />
-        </Suspense>
+        <HeroSection handleGetStarted={handleGetStarted} handleSignIn={handleSignIn} />
+
+        {/* Dark mode — continuous dark background below hero */}
+        <div style={{ background: '#141E16' }}>
+          {/* Two lives beginning their journey — converge after the hero */}
+          <ConvergingLines className="mt-2" />
+
+          <Suspense fallback={<SectionLoader />}>
+            <WhyUnpreparedSection handleGetStarted={handleGetStarted} />
+
+            {/* Light break #1 */}
+            <div style={{ background: '#F5F1EB' }}>
+              <ThisIsForYouSection handleGetStarted={handleGetStarted} />
+            </div>
+
+            <HowItWorksSection handleGetStarted={handleGetStarted} />
+            <WhatYouGainSection handleGetStarted={handleGetStarted} />
+            <WhatYouExploreSection handleGetStarted={handleGetStarted} />
+
+            {/* Dark lines before light break #2 */}
+            <ConvergingLines opacity={0.3} />
+
+            {/* Light break #2 */}
+            <div style={{ background: '#F5F1EB' }}>
+              <ConvergingLines color="#2F4F3F" opacity={0.18} />
+              <TestimonialsSection handleGetStarted={handleGetStarted} />
+            </div>
+
+            <PrivacySection handleGetStarted={handleGetStarted} />
+
+            {/* Lines meet before the core statement */}
+            <ConvergingLines opacity={0.3} />
+            <TaglineSection handleGetStarted={handleGetStarted} />
+
+            {/* Light break #3 */}
+            <div style={{ background: '#F5F1EB' }}>
+              <InvestmentSection handleGetStarted={handleGetStarted} />
+            </div>
+          </Suspense>
+        </div>
+
+        <FinalCtaSection handleGetStarted={handleGetStarted} />
       </main>
     </div>
   );
