@@ -531,7 +531,7 @@ export default function ReportPage() {
         hasBothResponses,
         hasDiscussion: !isAligned && question.discussion_question
       };
-    }).filter(q => q.hasBothResponses); // Only show questions with both responses
+    }).filter(q => q.partner1Response || q.partner2Response); // Show any question with at least one response
 
     // Sort based on selected option
     switch (sortBy) {
