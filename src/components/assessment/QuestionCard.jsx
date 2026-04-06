@@ -28,7 +28,11 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
   }
 
   // Map database field names to component expectations
-  const questionText = question.question_text || question.text;
+  // question_text can be an object {tip_text, question_text} if stored as JSONB
+  const rawQuestionText = question.question_text || question.text || '';
+  const questionText = typeof rawQuestionText === 'object'
+    ? (rawQuestionText.question_text || rawQuestionText.text || '')
+    : rawQuestionText;
   const questionSection = question.section;
   const questionExplainer = question.explainer;
   const questionDefinition = question.definition;
@@ -67,23 +71,30 @@ export default function QuestionCard({ question, selectedAnswer, onAnswer }) {
       <CardContent>
         <div className="space-y-3">
           {options && Array.isArray(options) ? 
-            options.map((option, index) => (
-              <Button
-                key={index}
-                onClick={() => {
-                  console.log('🖱️ Option clicked:', option, 'for question:', question.questionId || question.question_id);
-                  onAnswer(option);
-                }}
-                variant="outline"
-                className={`w-full text-left justify-start p-4 min-h-[44px] h-auto font-sacred text-base leading-relaxed transition-all duration-200 touch-manipulation ${
-                  selectedAnswer === option
-                    ? 'bg-[#7A9B8A] text-white border-[#7A9B8A] hover:bg-[#6B8B7A] hover:border-[#6B8B7A] shadow-md'
-                    : 'bg-white border-[#E6D7C9] text-[#2F4F3F] hover:bg-[#F5F1EB] hover:border-[#C4756B]'
-                }`}
-              >
-                {option}
-              </Button>
-            )) 
+            options.map((option, index) => {
+              // Options may be stored as objects {tip_text, question_text} or plain strings
+              const optionText = typeof option === 'object' && option !== null
+                ? (option.question_text || option.text || option.value || JSON.stringify(option))
+                : String(option ?? '');
+              // Use optionText as the answer value so comparisons work correctly
+              return (
+                <Button
+                  key={index}
+                  onClick={() => {
+                    console.log('🖱️ Option clicked:', optionText, 'for question:', question.questionId || question.question_id);
+                    onAnswer(optionText);
+                  }}
+                  variant="outline"
+                  className={`w-full text-left justify-start p-4 min-h-[44px] h-auto font-sacred text-base leading-relaxed transition-all duration-200 touch-manipulation ${
+                    selectedAnswer === optionText
+                      ? 'bg-[#7A9B8A] text-white border-[#7A9B8A] hover:bg-[#6B8B7A] hover:border-[#6B8B7A] shadow-md'
+                      : 'bg-white border-[#E6D7C9] text-[#2F4F3F] hover:bg-[#F5F1EB] hover:border-[#C4756B]'
+                  }`}
+                >
+                  {optionText}
+                </Button>
+              );
+            }) 
             : (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-amber-800 font-sacred">

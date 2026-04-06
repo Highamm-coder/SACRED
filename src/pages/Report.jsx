@@ -13,6 +13,37 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, RadialBarChart, RadialBar } from 'recharts';
 import AuthWrapper from '../components/auth/AuthWrapper';
 
+// Question options in the DB can be objects like {tip_text, question_text}.
+// These helpers safely extract a display string from whatever shape we receive.
+const getQuestionText = (q) => {
+  if (!q) return '';
+  const raw = q.question_text ?? q.text ?? '';
+  if (typeof raw === 'object' && raw !== null) {
+    return raw.question_text ?? raw.text ?? JSON.stringify(raw);
+  }
+  return String(raw);
+};
+
+const getResponseText = (response) => {
+  if (!response) return 'No response';
+  const v = response.response_value;
+  if (v === null || v === undefined) return 'No response';
+  if (typeof v === 'object') {
+    // option was saved as {tip_text, question_text} — extract display text
+    return v.question_text ?? v.text ?? v.value ?? JSON.stringify(v);
+  }
+  return String(v);
+};
+
+const getDiscussionText = (q) => {
+  if (!q) return '';
+  const raw = q.discussion_question ?? '';
+  if (typeof raw === 'object' && raw !== null) {
+    return raw.question_text ?? raw.text ?? JSON.stringify(raw);
+  }
+  return String(raw);
+};
+
 export default function ReportPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -286,7 +317,7 @@ export default function ReportPage() {
       const matchingAnswers = reportData.allQuestions.filter(question => {
         const partner1Response = reportData.partner1Responses.find(r => r.question_id === question.question_id);
         const partner2Response = reportData.partner2Responses.find(r => r.question_id === question.question_id);
-        return partner1Response && partner2Response && partner1Response.response_value === partner2Response.response_value;
+        return partner1Response && partner2Response && getResponseText(partner1Response) === getResponseText(partner2Response);
       }).length;
       
       const totalComparableQuestions = reportData.allQuestions.filter(question => {
@@ -450,7 +481,7 @@ export default function ReportPage() {
       const partner2Response = reportData.partner2Responses.find(r => r.question_id === question.question_id);
       
       const isAligned = partner1Response && partner2Response && 
-                       partner1Response.response_value === partner2Response.response_value;
+                       getResponseText(partner1Response) === getResponseText(partner2Response);
       const hasBothResponses = partner1Response && partner2Response;
       
       return {
@@ -539,7 +570,7 @@ export default function ReportPage() {
           </div>
           
           <CardTitle className="font-sacred-bold text-[#2F4F3F] text-lg mb-2">
-            {questionData.question_text}
+            {getQuestionText(questionData)}
           </CardTitle>
           
           {questionData.section && (
@@ -555,13 +586,13 @@ export default function ReportPage() {
               <div className="p-4 bg-white rounded-lg border-l-4 border-[#C4756B]">
                 <h5 className="font-sacred-bold text-[#C4756B] mb-2">{partner1Name}</h5>
                 <p className="text-sm font-sacred text-[#6B5B73]">
-                  {questionData.partner1Response ? questionData.partner1Response.response_value : 'No response'}
+                  {getResponseText(questionData.partner1Response)}
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border-l-4 border-[#7A9B8A]">
                 <h5 className="font-sacred-bold text-[#7A9B8A] mb-2">{partner2Name}</h5>
                 <p className="text-sm font-sacred text-[#6B5B73]">
-                  {questionData.partner2Response ? questionData.partner2Response.response_value : 'No response'}
+                  {getResponseText(questionData.partner2Response)}
                 </p>
               </div>
             </div>
@@ -578,7 +609,7 @@ export default function ReportPage() {
                   💬 Discussion Opportunity
                 </h6>
                 <p className="text-sm font-sacred text-[#6B5B73] leading-relaxed">
-                  {questionData.discussion_question}
+                  {getDiscussionText(questionData)}
                 </p>
               </div>
             )}
@@ -611,20 +642,20 @@ export default function ReportPage() {
             </div>
             
             <h4 className="font-sacred-bold text-[#2F4F3F] mb-4">
-              {questionData.question_text}
+              {getQuestionText(questionData)}
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-white rounded-lg border-l-4 border-[#C4756B]">
                 <h5 className="font-sacred-bold text-[#C4756B] mb-2">{partner1Name}</h5>
                 <p className="text-sm font-sacred text-[#6B5B73]">
-                  {questionData.partner1Response ? questionData.partner1Response.response_value : 'No response'}
+                  {getResponseText(questionData.partner1Response)}
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border-l-4 border-[#7A9B8A]">
                 <h5 className="font-sacred-bold text-[#7A9B8A] mb-2">{partner2Name}</h5>
                 <p className="text-sm font-sacred text-[#6B5B73]">
-                  {questionData.partner2Response ? questionData.partner2Response.response_value : 'No response'}
+                  {getResponseText(questionData.partner2Response)}
                 </p>
               </div>
             </div>
@@ -641,7 +672,7 @@ export default function ReportPage() {
                   💬 Discussion Opportunity
                 </h6>
                 <p className="text-sm font-sacred text-[#6B5B73] leading-relaxed">
-                  {questionData.discussion_question}
+                  {getDiscussionText(questionData)}
                 </p>
               </div>
             )}
