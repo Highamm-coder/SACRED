@@ -47,24 +47,10 @@ export const Assessment = {
   async get(id) {
     const { data, error } = await supabase
       .from('assessments')
-      .select(`
-        *,
-        assessment_responses (
-          id,
-          question_id,
-          question_text,
-          section,
-          response_value,
-          response_type,
-          score,
-          metadata,
-          created_at,
-          updated_at
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .single();
-    
+
     handleSupabaseError(error);
     return data;
   },
@@ -93,12 +79,9 @@ export const Assessment = {
   async list() {
     const { data, error } = await supabase
       .from('assessments')
-      .select(`
-        *,
-        assessment_responses (count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
-    
+
     handleSupabaseError(error);
     return data || [];
   },

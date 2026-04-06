@@ -80,13 +80,18 @@ export default function AssessmentPage() {
                     setSessionId(generateAnonymousSessionId());
                 }
 
-                // Load existing responses from server (backup)
-                if (assessmentData.assessment_responses) {
-                    const responseMap = {};
-                    assessmentData.assessment_responses.forEach(response => {
-                        responseMap[response.question_id] = response.response_value;
-                    });
-                    setResponses(responseMap);
+                // Load existing responses from server (backup for resume without localStorage)
+                try {
+                    const serverResponses = await Assessment.getResponses(assessmentId);
+                    if (serverResponses && serverResponses.length > 0) {
+                        const responseMap = {};
+                        serverResponses.forEach(response => {
+                            responseMap[response.question_id] = response.response_value;
+                        });
+                        setResponses(responseMap);
+                    }
+                } catch {
+                    // Non-fatal: localStorage is the primary progress store
                 }
 
             } catch (error) {

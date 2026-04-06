@@ -151,7 +151,7 @@ export default function ReportPage() {
 
       } catch (error) {
         console.error('Error generating report:', error);
-        navigate(createPageUrl('Dashboard?error=report_generation_failed'));
+        setReportData({ loadError: error?.message || 'Unknown error' });
       } finally {
         setIsLoading(false);
       }
@@ -731,15 +731,18 @@ export default function ReportPage() {
     );
   }
 
-  if (!reportData) {
+  if (!reportData || reportData.loadError) {
     return (
       <AuthWrapper requireAuth={true}>
         <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#EAE6E1] flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-[#2F4F3F] font-sacred">Unable to generate report. Please try again.</p>
-            <Button 
+          <div className="text-center max-w-md px-4">
+            <p className="text-[#2F4F3F] font-sacred mb-2">Unable to generate report. Please try again.</p>
+            {reportData?.loadError && (
+              <p className="text-sm text-[#C4756B] font-sacred mb-4 bg-white/60 rounded p-2">{reportData.loadError}</p>
+            )}
+            <Button
               onClick={() => navigate(createPageUrl('Dashboard'))}
-              className="mt-4 bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred"
+              className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred"
             >
               Back to Dashboard
             </Button>
