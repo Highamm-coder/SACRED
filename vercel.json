@@ -1,6 +1,7 @@
 {
   "redirects": [
-    { "source": "/landing", "destination": "/", "permanent": true }
+    { "source": "/landing", "destination": "/", "permanent": true },
+    { "source": "/Landing", "destination": "/", "permanent": true }
   ],
   "rewrites": [
     { "source": "/robots.txt", "destination": "/api/robots" },

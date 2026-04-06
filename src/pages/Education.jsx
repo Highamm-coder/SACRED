@@ -206,9 +206,9 @@ export default function EducationPage() {
         className="fixed top-0 left-0 right-0 z-20 py-4 px-6 md:px-10 nav-at-top"
       >
         <nav className="flex justify-between items-center max-w-7xl mx-auto">
-          <Link to={createPageUrl('Landing')} className="nav-logo text-3xl font-sacred tracking-widest transition-colors duration-300">
+          <a href="/" className="nav-logo text-3xl font-sacred tracking-widest transition-colors duration-300">
             SACRED
-          </Link>
+          </a>
           <div className="flex items-center gap-6">
             <Link to="/blog" className="nav-link font-sacred text-base transition-colors duration-300">
               Blog

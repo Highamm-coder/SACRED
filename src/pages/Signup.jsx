@@ -72,9 +72,9 @@ export default function SignupPage() {
 
       {/* ── Left — form ── */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-14 lg:px-20 py-16 bg-[#F5F1EB]">
-        <Link to={createPageUrl('Landing')} className="text-2xl font-sacred tracking-widest text-[#2F4F3F] mb-12 block">
+        <a href="/" className="text-2xl font-sacred tracking-widest text-[#2F4F3F] mb-12 block">
           SACRED
-        </Link>
+        </a>
 
         {verificationSent ? (
           <div className="max-w-sm">

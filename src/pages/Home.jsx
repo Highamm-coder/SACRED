@@ -12,7 +12,7 @@ export default function HomePage() {
         // Check if environment variables are set
         if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
           console.warn('Supabase environment variables not set, redirecting to landing page');
-          navigate(createPageUrl('Landing'));
+          window.location.href = '/';
           return;
         }
 
@@ -26,10 +26,10 @@ export default function HomePage() {
       } catch (e) {
         console.error('Auth check error:', e);
         // User not logged in or auth error, show landing page
-        navigate(createPageUrl('Landing'));
+        window.location.href = '/';
       }
     };
-    
+
     checkAndRedirect();
   }, [navigate]);
 

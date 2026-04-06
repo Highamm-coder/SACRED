@@ -78,10 +78,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] via-[#F8F4EE] to-[#F2EDE7] flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         {/* Back to Landing */}
-        <Link to={createPageUrl('Landing')} className="inline-flex items-center text-[#2F4F3F] hover:text-[#1F3F2F] mb-6 font-sacred">
+        <a href="/" className="inline-flex items-center text-[#2F4F3F] hover:text-[#1F3F2F] mb-6 font-sacred">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
-        </Link>
+        </a>
 
         <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
           <CardHeader className="text-center space-y-4">

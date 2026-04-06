@@ -81,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     await User.signOut();
     setUser(null);
-    window.location.href = createPageUrl('Landing');
+    window.location.href = '/';
   };
 
   const handleAuthRedirect = () => {
