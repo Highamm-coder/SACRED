@@ -44,6 +44,39 @@ const getDiscussionText = (q) => {
   return String(raw);
 };
 
+const getSectionLabel = (sectionId) => {
+  if (!sectionId) return 'General';
+  const known = {
+    sexual_knowledge: 'Sexual Knowledge',
+    knowledge: 'Sexual Knowledge',
+    boundaries: 'Boundaries & Comfort',
+    comfort: 'Boundaries & Comfort',
+    practical: 'Practical Preparation',
+    practical_prep: 'Practical Preparation',
+    expectations: 'Expectations',
+    communication: 'Communication',
+    intimacy: 'Physical Intimacy',
+    history: 'Personal History',
+    faith: 'Faith & Values',
+    general: 'General',
+  };
+  const id = String(sectionId).toLowerCase().replace(/[\s-]/g, '_');
+  return known[id] || sectionId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+const getSectionNarrative = (sectionId, pct) => {
+  const label = getSectionLabel(sectionId).toLowerCase();
+  if (pct >= 75) {
+    return `You're well-aligned on ${label}. Your shared understanding here will be a genuine strength as you start your marriage.`;
+  } else if (pct >= 50) {
+    return `You have solid alignment on ${label}, with a few areas worth exploring together. These differences are normal and very workable.`;
+  } else if (pct >= 25) {
+    return `${getSectionLabel(sectionId)} is an area with meaningful differences between you. This is exactly the kind of conversation SACRED is designed to help you have.`;
+  } else {
+    return `You have quite different responses on ${label}. Dedicate unhurried time to this section — working through it before your wedding will serve you both well.`;
+  }
+};
+
 export default function ReportPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,6 +88,12 @@ export default function ReportPage() {
   const [viewMode, setViewMode] = useState('list'); // 'card' or 'list'
   const [sortBy, setSortBy] = useState('order'); // 'alignment', 'order', 'misalignment'
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+
+  const handlePrint = () => {
+    // Ensure list view is active so all questions appear in print
+    setViewMode('list');
+    setTimeout(() => window.print(), 150);
+  };
 
   const urlParams = new URLSearchParams(location.search);
   const assessmentId = urlParams.get('id');
@@ -619,6 +658,95 @@ export default function ReportPage() {
     );
   };
 
+  const renderHowToUse = () => {
+    if (!reportData.isAlignmentReport) return null;
+    return (
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-[#2F4F3F] to-[#3d6b55] mb-6 print:shadow-none print:border print:border-[#2F4F3F]">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-white/20 rounded-lg flex-shrink-0">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-sacred-bold text-white mb-2">How to Use This Report</h2>
+              <p className="font-sacred text-white/85 leading-relaxed mb-3">
+                This report shows how you and your partner answered each question. Questions where you gave the same answer are marked <strong>Aligned</strong>. Those with different answers are marked <strong>Discussion Needed</strong> — these are not problems, they are conversations waiting to happen.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#7A9B8A] mt-0.5 flex-shrink-0" />
+                  <p className="text-sm font-sacred text-white/80">Review each section together, not alone</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#7A9B8A] mt-0.5 flex-shrink-0" />
+                  <p className="text-sm font-sacred text-white/80">Use the discussion questions as conversation starters</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#7A9B8A] mt-0.5 flex-shrink-0" />
+                  <p className="text-sm font-sacred text-white/80">Focus on understanding, not winning — differences are normal</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderSectionSummaries = () => {
+    if (!reportData.isAlignmentReport) return null;
+
+    // Group questions by section, count aligned vs total
+    const sections = {};
+    reportData.allQuestions.forEach(question => {
+      const section = question.section || 'general';
+      if (!sections[section]) sections[section] = { total: 0, aligned: 0 };
+      const p1 = reportData.partner1Responses.find(r => r.question_id === question.question_id);
+      const p2 = reportData.partner2Responses.find(r => r.question_id === question.question_id);
+      if (p1 && p2) {
+        sections[section].total++;
+        if (getResponseText(p1) === getResponseText(p2)) sections[section].aligned++;
+      }
+    });
+
+    const sectionEntries = Object.entries(sections).filter(([, d]) => d.total > 0);
+    if (sectionEntries.length === 0) return null;
+
+    return (
+      <div className="mb-6">
+        <h2 className="text-xl font-sacred-bold text-[#2F4F3F] mb-4">Section by Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sectionEntries.map(([sectionId, data]) => {
+            const pct = data.total > 0 ? Math.round((data.aligned / data.total) * 100) : 0;
+            const barColor = pct >= 75 ? '#7A9B8A' : pct >= 50 ? '#B8956A' : '#C4756B';
+            return (
+              <Card key={sectionId} className="border-0 shadow-md bg-white print:shadow-none print:border print:border-[#E6D7C9]">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-sacred-bold text-[#2F4F3F] text-base">{getSectionLabel(sectionId)}</h3>
+                    <span className="text-2xl font-sacred-bold" style={{ color: barColor }}>{pct}%</span>
+                  </div>
+                  <div className="w-full bg-[#E6D7C9] rounded-full h-2 mb-3">
+                    <div
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: barColor }}
+                    />
+                  </div>
+                  <p className="text-sm font-sacred text-[#6B5B73] leading-relaxed">
+                    {getSectionNarrative(sectionId, pct)}
+                  </p>
+                  <p className="text-xs font-sacred text-[#6B5B73]/70 mt-2">
+                    {data.aligned} of {data.total} questions aligned
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Render questions list
   const renderQuestionsList = (sortedQuestions) => {
     const partner1Name = reportData.partner1Assessment.metadata?.partnerName || 
@@ -785,10 +913,21 @@ export default function ReportPage() {
 
   return (
     <AuthWrapper requireAuth={true}>
+      <style>{`
+        @media print {
+          body { background: white !important; }
+          .print\\:hidden { display: none !important; }
+          nav, aside, footer, [data-sidebar] { display: none !important; }
+          .min-h-screen { min-height: unset !important; }
+          .bg-gradient-to-br { background: white !important; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .shadow-lg, .shadow-xl, .shadow-md { box-shadow: none !important; }
+        }
+      `}</style>
       <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#EAE6E1] py-8 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 print:hidden">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(createPageUrl('Dashboard'))}
@@ -805,7 +944,8 @@ export default function ReportPage() {
               </div>
               <Button
                 variant="outline"
-                className="border-[#C4756B] text-[#C4756B] hover:bg-[#C4756B] hover:text-white font-sacred"
+                className="border-[#C4756B] text-[#C4756B] hover:bg-[#C4756B] hover:text-white font-sacred print:hidden"
+                onClick={handlePrint}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download Report
@@ -813,15 +953,21 @@ export default function ReportPage() {
             </div>
           </div>
 
+          {/* How To Use — alignment report only */}
+          {renderHowToUse()}
+
           {/* Overall Summary */}
           {renderOverallSummary()}
+
+          {/* Section Summaries — alignment report only */}
+          {renderSectionSummaries()}
 
           {/* Report Content */}
           <div className="space-y-6">
             {reportData.isAlignmentReport ? (
               <>
                 {/* View Controls */}
-                <Card className="border-0 shadow-lg bg-white">
+                <Card className="border-0 shadow-lg bg-white print:hidden">
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
