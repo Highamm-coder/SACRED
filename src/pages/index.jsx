@@ -179,8 +179,6 @@ function PagesContent() {
                 
                 <Route path="/OpenEndedInvite" element={<OpenEndedInvite />} />
                 
-                <Route path="/Education" element={<Education />} />
-                
                 <Route path="/AuthDebug" element={<AuthDebug />} />
                 
                 <Route path="/Onboarding" element={<Onboarding />} />

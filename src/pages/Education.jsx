@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { educationResourceService } from '@/api/services/cms';
+import { User } from '@/api/entities';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -123,7 +124,12 @@ export default function EducationPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const headerRef = useRef(null);
+
+  useEffect(() => {
+    User.me().then(setUser).catch(() => {}); // silent — page is public
+  }, []);
 
   // Nav scroll behaviour — same as Landing
   useEffect(() => {
@@ -213,15 +219,26 @@ export default function EducationPage() {
             <Link to="/blog" className="nav-link font-sacred text-base transition-colors duration-300">
               Blog
             </Link>
-            <Link to={createPageUrl('Login')} className="nav-link font-sacred text-base transition-colors duration-300">
-              Sign in
-            </Link>
-            <Button
-              asChild
-              className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-6 text-sm transition-all duration-300"
-            >
-              <Link to={createPageUrl('Signup')}>Begin Assessment</Link>
-            </Button>
+            {user ? (
+              <Button
+                asChild
+                className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-6 text-sm transition-all duration-300"
+              >
+                <Link to={createPageUrl('Dashboard')}>My Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Link to={createPageUrl('Login')} className="nav-link font-sacred text-base transition-colors duration-300">
+                  Sign in
+                </Link>
+                <Button
+                  asChild
+                  className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-6 text-sm transition-all duration-300"
+                >
+                  <Link to={createPageUrl('Signup')}>Begin Assessment</Link>
+                </Button>
+              </>
+            )}
           </div>
         </nav>
       </header>

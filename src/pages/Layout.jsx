@@ -153,8 +153,9 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Pages that manage their own full-screen layout and nav
-  const fullscreenPages = ['Landing', 'Login', 'Signup', 'Education', 'ResourcePage'];
-  const isFullscreen = fullscreenPages.includes(currentPageName);
+  const fullscreenPages = ['Landing', 'Login', 'Signup', 'ResourcePage'];
+  const isFullscreen = fullscreenPages.includes(currentPageName) ||
+    window.location.pathname.startsWith('/blog');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -219,8 +220,8 @@ export default function Layout({ children, currentPageName }) {
               <div>
                 <h4 className="font-sacred-bold text-[#2F4F3F] mb-4">Resources</h4>
                 <div className="space-y-2">
-                  <Link to={createPageUrl('Education')} className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
-                    Education Center
+                  <Link to="/blog" className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
+                    Blog
                   </Link>
                   <Link to={createPageUrl('Shop')} className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
                     Recommended Products
@@ -267,8 +268,8 @@ export default function Layout({ children, currentPageName }) {
                   >
                     Sign In
                   </button>
-                  <Link to={createPageUrl('Education')} className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
-                    Education Center
+                  <Link to="/blog" className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
+                    Blog
                   </Link>
                   <Link to={createPageUrl('Shop')} className="block text-[#6B5B73] hover:text-[#C4756B] font-sacred transition-colors">
                     Recommended Products

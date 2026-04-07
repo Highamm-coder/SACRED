@@ -70,7 +70,7 @@ export default function BlogPostPage() {
   }
 
   return (
-    <AuthWrapper requireAuth={true}>
+    <AuthWrapper requireAuth={false}>
       <div className="bg-white min-h-screen">
         <style jsx global>{`
           .blog-content {
