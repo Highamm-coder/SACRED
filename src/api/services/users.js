@@ -44,7 +44,7 @@ export const User = {
     
     // Extract emailRedirectTo from userData if provided, otherwise use default
     const { emailRedirectTo, ...userMetadata } = userData;
-    const redirectUrl = emailRedirectTo || getSiteUrl();
+    const redirectUrl = emailRedirectTo || `${getSiteUrl()}/auth/callback`;
     
     console.log('SignUp with emailRedirectTo:', redirectUrl);
     

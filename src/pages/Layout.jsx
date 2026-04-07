@@ -47,7 +47,7 @@ export default function Layout({ children, currentPageName }) {
       setUser(currentUser);
 
       // ENTERPRISE FIX: Payment validation now uses refreshed user data
-      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite', 'Login', 'Signup', 'ResourcePage'];
+      const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite', 'Login', 'Signup', 'ResourcePage', 'AuthCallback'];
       if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
         // Allow admin users to bypass payment requirement
         if (currentUser.role === 'admin') {
@@ -153,9 +153,10 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Pages that manage their own full-screen layout and nav
-  const fullscreenPages = ['Landing', 'Login', 'Signup', 'ResourcePage'];
+  const fullscreenPages = ['Landing', 'Login', 'Signup', 'ResourcePage', 'AuthCallback'];
   const isFullscreen = fullscreenPages.includes(currentPageName) ||
-    window.location.pathname.startsWith('/blog');
+    window.location.pathname.startsWith('/blog') ||
+    window.location.pathname.startsWith('/auth/');
 
   return (
     <div className="min-h-screen bg-gray-50">

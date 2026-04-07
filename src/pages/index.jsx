@@ -29,6 +29,7 @@ import OpenEndedInvite from "./OpenEndedInvite";
 import Education from "./Education";
 
 import AuthDebug from "./AuthDebug";
+import AuthCallback from "./AuthCallback";
 
 import Onboarding from "./Onboarding";
 
@@ -198,6 +199,8 @@ function PagesContent() {
                 <Route path="/Login" element={<Login />} />
 
                 <Route path="/Signup" element={<Signup />} />
+
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 
                 <Route path="/EmailTest" element={<EmailTest />} />
                 
