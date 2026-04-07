@@ -747,6 +747,229 @@ export default function ReportPage() {
     );
   };
 
+  // ─── Document page renders (alignment report) ────────────────────────────
+
+  const computeAlignmentData = () => {
+    const sections = {};
+    reportData.allQuestions.forEach(q => {
+      const section = q.section || 'general';
+      if (!sections[section]) sections[section] = { total: 0, aligned: 0 };
+      const p1 = reportData.partner1Responses.find(r => r.question_id === q.question_id);
+      const p2 = reportData.partner2Responses.find(r => r.question_id === q.question_id);
+      if (p1 || p2) {
+        sections[section].total++;
+        if (p1 && p2 && getResponseText(p1) === getResponseText(p2)) sections[section].aligned++;
+      }
+    });
+    const totalAnswered = Object.values(sections).reduce((s, d) => s + d.total, 0);
+    const totalAligned = Object.values(sections).reduce((s, d) => s + d.aligned, 0);
+    const alignmentPct = totalAnswered > 0 ? Math.round((totalAligned / totalAnswered) * 100) : 0;
+    return { sections, totalAnswered, alignmentPct };
+  };
+
+  const renderCoverPage = (p1Name, p2Name) => (
+    <div className="bg-gradient-to-br from-[#2F4F3F] to-[#1e3b2e] rounded-lg shadow-xl p-16 min-h-[1056px] flex flex-col justify-between break-after-page print:rounded-none print:shadow-none">
+      <div>
+        <p className="text-[#7A9B8A] font-sacred text-sm tracking-widest uppercase mb-3">Sacred</p>
+        <div className="w-10 h-px bg-[#7A9B8A]" />
+      </div>
+      <div>
+        <h1 className="text-6xl font-sacred-bold text-white leading-tight mb-6">
+          Pre-Marriage<br/>Assessment<br/>Report
+        </h1>
+        <div className="w-10 h-px bg-[#C4756B] mb-8" />
+        <p className="text-2xl font-sacred text-white/80 mb-2">{p1Name} &amp; {p2Name}</p>
+        <p className="font-sacred text-white/50">
+          {reportData.completionDate?.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
+      <p className="text-xs font-sacred text-white/30 tracking-widest uppercase">Confidential · For your eyes only</p>
+    </div>
+  );
+
+  const renderIntroPage = (p1Name, p2Name, alignmentPct, totalAnswered) => (
+    <div className="bg-white rounded-lg shadow-lg p-16 min-h-[1056px] flex flex-col break-after-page print:rounded-none print:shadow-none">
+      <div className="mb-12">
+        <p className="text-[#C4756B] font-sacred text-sm tracking-widest uppercase mb-2">Introduction</p>
+        <h2 className="text-4xl font-sacred-bold text-[#2F4F3F] mb-4">About This Report</h2>
+        <div className="w-10 h-px bg-[#C4756B]" />
+      </div>
+      <div className="space-y-5 mb-12 flex-1">
+        <p className="font-sacred text-[#6B5B73] text-lg leading-relaxed">
+          This report is the result of both of you independently completing the Sacred Pre-Marriage Assessment. It is designed to be read <em>together</em> — slowly, and with curiosity.
+        </p>
+        <p className="font-sacred text-[#6B5B73] text-lg leading-relaxed">
+          Each page that follows covers a single question from the assessment. You will see both of your answers, and where you differ, a guided conversation to help you explore those differences well.
+        </p>
+        <p className="font-sacred text-[#6B5B73] text-lg leading-relaxed">
+          Differences are not failures. They are the material of good marriage conversations. The goal is not to agree on everything — it is to understand each other more fully.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6 mb-12">
+        <div className="p-6 bg-[#F5F1EB] rounded-lg text-center">
+          <div className="text-4xl font-sacred-bold text-[#C4756B] mb-1">{alignmentPct}%</div>
+          <div className="text-sm font-sacred text-[#6B5B73]">Overall Alignment</div>
+        </div>
+        <div className="p-6 bg-[#F5F1EB] rounded-lg text-center">
+          <div className="text-4xl font-sacred-bold text-[#2F4F3F] mb-1">{totalAnswered}</div>
+          <div className="text-sm font-sacred text-[#6B5B73]">Questions Answered</div>
+        </div>
+        <div className="p-6 bg-[#F5F1EB] rounded-lg text-center">
+          <div className="text-4xl font-sacred-bold text-[#7A9B8A] mb-1">{reportData.allQuestions.length}</div>
+          <div className="text-sm font-sacred text-[#6B5B73]">Total Questions</div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-sacred-bold text-[#2F4F3F] mb-4">How to Use This Report</h3>
+        <div className="space-y-3">
+          {[
+            'Set aside dedicated time — an evening or a quiet afternoon',
+            'Read each question page together, not alone in advance',
+            'Use the conversation guides to go deeper on areas of difference',
+            'There are no right answers — only honest ones',
+          ].map((tip, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="text-[#C4756B] font-sacred-bold text-lg leading-none mt-0.5">{i + 1}.</span>
+              <p className="font-sacred text-[#6B5B73]">{tip}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContentsPage = (sections) => {
+    const sectionEntries = Object.entries(sections);
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-16 min-h-[1056px] flex flex-col break-after-page print:rounded-none print:shadow-none">
+        <div className="mb-12">
+          <p className="text-[#C4756B] font-sacred text-sm tracking-widest uppercase mb-2">Contents</p>
+          <h2 className="text-4xl font-sacred-bold text-[#2F4F3F] mb-4">What's Inside</h2>
+          <div className="w-10 h-px bg-[#C4756B]" />
+        </div>
+        <div className="space-y-1">
+          {sectionEntries.map(([sectionId, data], i) => {
+            const pct = data.total > 0 ? Math.round((data.aligned / data.total) * 100) : 0;
+            const barColor = pct >= 75 ? '#7A9B8A' : pct >= 50 ? '#B8956A' : '#C4756B';
+            return (
+              <div key={sectionId} className="flex items-center gap-6 py-5 border-b border-[#E6D7C9]">
+                <span className="text-2xl font-sacred-bold text-[#E6D7C9] w-10 flex-shrink-0">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="flex-1">
+                  <div className="font-sacred-bold text-[#2F4F3F] text-lg mb-1">{getSectionLabel(sectionId)}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 bg-[#E6D7C9] rounded-full max-w-[200px]">
+                      <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                    </div>
+                    <span className="text-sm font-sacred" style={{ color: barColor }}>{pct}% aligned</span>
+                  </div>
+                </div>
+                <span className="text-sm font-sacred text-[#6B5B73] flex-shrink-0">{data.total} questions</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-auto pt-8">
+          <p className="font-sacred text-[#6B5B73]/50 text-sm italic">
+            Sections with lower alignment are not cause for concern — they are invitations to deeper conversation.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderQuestionPage = (questionData, index, total, p1Name, p2Name) => {
+    const isAligned = questionData.isAligned;
+    return (
+      <div key={questionData.question_id} className="bg-white rounded-lg shadow-lg p-12 min-h-[1056px] flex flex-col break-after-page print:rounded-none print:shadow-none">
+        {/* Page header */}
+        <div className="flex items-center justify-between pb-4 border-b border-[#E6D7C9] mb-8">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-sacred text-[#6B5B73]">{getSectionLabel(questionData.section)}</span>
+            <span className="text-[#E6D7C9]">·</span>
+            <span className="text-sm font-sacred text-[#6B5B73]">Question {index + 1} of {total}</span>
+          </div>
+          {isAligned ? (
+            <span className="text-xs font-sacred text-[#7A9B8A] bg-[#7A9B8A]/10 px-3 py-1 rounded-full">Aligned</span>
+          ) : (
+            <span className="text-xs font-sacred text-[#C4756B] bg-[#C4756B]/10 px-3 py-1 rounded-full">Discussion Needed</span>
+          )}
+        </div>
+
+        {/* Question */}
+        <h2 className="text-3xl font-sacred-bold text-[#2F4F3F] leading-tight mb-10">
+          {getQuestionText(questionData)}
+        </h2>
+
+        {/* Answers */}
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="p-6 bg-[#F5F1EB] rounded-lg border-l-4 border-[#C4756B]">
+            <p className="text-xs font-sacred text-[#C4756B] uppercase tracking-widest mb-3">{p1Name}</p>
+            <p className="font-sacred text-[#2F4F3F] text-lg leading-relaxed">
+              {getResponseText(questionData.partner1Response)}
+            </p>
+          </div>
+          <div className="p-6 bg-[#F5F1EB] rounded-lg border-l-4 border-[#7A9B8A]">
+            <p className="text-xs font-sacred text-[#7A9B8A] uppercase tracking-widest mb-3">{p2Name}</p>
+            <p className="font-sacred text-[#2F4F3F] text-lg leading-relaxed">
+              {getResponseText(questionData.partner2Response)}
+            </p>
+          </div>
+        </div>
+
+        {/* Aligned note */}
+        {isAligned && (
+          <div className="mb-6 p-4 bg-[#7A9B8A]/10 border border-[#7A9B8A]/20 rounded-lg">
+            <p className="text-sm font-sacred text-[#7A9B8A]">
+              You both gave the same answer. This is a genuine point of common ground — reflect together on what it means for your marriage.
+            </p>
+          </div>
+        )}
+
+        {/* Conversation Guide */}
+        <div className="flex-1 space-y-6">
+          {questionData.conversation_guide ? (
+            <div>
+              <h3 className="text-xs font-sacred text-[#C4756B] uppercase tracking-widest mb-3">Conversation Guide</h3>
+              <p className="font-sacred text-[#6B5B73] leading-relaxed">{questionData.conversation_guide}</p>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-[#E6D7C9] rounded-lg p-8 print:hidden">
+              <p className="text-sm font-sacred text-[#6B5B73]/40 text-center">Conversation guide coming soon</p>
+            </div>
+          )}
+
+          {/* Discussion starter from DB */}
+          {!isAligned && questionData.discussion_question && (
+            <div>
+              <h3 className="text-xs font-sacred text-[#6B5B73] uppercase tracking-widest mb-3">Starter Question</h3>
+              <p className="font-sacred text-[#6B5B73] italic leading-relaxed">
+                &ldquo;{getDiscussionText(questionData)}&rdquo;
+              </p>
+            </div>
+          )}
+
+          {/* Helpful Facts */}
+          {questionData.helpful_facts && (
+            <div className="p-6 bg-[#2F4F3F]/5 border-l-4 border-[#2F4F3F]/20 rounded-lg">
+              <h3 className="text-xs font-sacred text-[#2F4F3F] uppercase tracking-widest mb-3">Good to Know</h3>
+              <p className="font-sacred text-[#2F4F3F]/80 leading-relaxed text-sm">{questionData.helpful_facts}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Page footer */}
+        <div className="mt-8 pt-4 border-t border-[#E6D7C9] flex items-center justify-between">
+          <span className="text-xs font-sacred text-[#6B5B73]/30 uppercase tracking-widest">Sacred</span>
+          <span className="text-xs font-sacred text-[#6B5B73]/30">{index + 1}</span>
+        </div>
+      </div>
+    );
+  };
+
   // Render questions list
   const renderQuestionsList = (sortedQuestions) => {
     const partner1Name = reportData.partner1Assessment.metadata?.partnerName || 
@@ -915,6 +1138,7 @@ export default function ReportPage() {
     <AuthWrapper requireAuth={true}>
       <style>{`
         @media print {
+          @page { margin: 0; size: letter; }
           body { background: white !important; }
           .print\\:hidden { display: none !important; }
           nav, aside, footer, [data-sidebar] { display: none !important; }
@@ -922,6 +1146,8 @@ export default function ReportPage() {
           .bg-gradient-to-br { background: white !important; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .shadow-lg, .shadow-xl, .shadow-md { box-shadow: none !important; }
+          .break-after-page { break-after: page; page-break-after: always; }
+          .space-y-4 > * + * { margin-top: 0 !important; }
         }
       `}</style>
       <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#EAE6E1] py-8 px-4">
@@ -940,7 +1166,7 @@ export default function ReportPage() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-[#2F4F3F] font-sacred">
                 <UserIcon className="w-5 h-5" />
-                {getUserDisplayName(reportData.assessment, user)}
+                {getUserDisplayName(reportData.assessment || reportData.partner1Assessment, user)}
               </div>
               <Button
                 variant="outline"
@@ -953,125 +1179,32 @@ export default function ReportPage() {
             </div>
           </div>
 
-          {/* How To Use — alignment report only */}
-          {renderHowToUse()}
-
-          {/* Overall Summary */}
-          {renderOverallSummary()}
-
-          {/* Section Summaries — alignment report only */}
-          {renderSectionSummaries()}
-
-          {/* Report Content */}
-          <div className="space-y-6">
-            {reportData.isAlignmentReport ? (
+          {/* Report document */}
+          <div className="space-y-4 max-w-[816px] mx-auto">
+            {reportData.isAlignmentReport ? (() => {
+              const p1Name = reportData.partner1Assessment.metadata?.partnerName ||
+                             reportData.partner1Assessment.metadata?.partner1Name || 'Partner 1';
+              const p2Name = reportData.partner2Assessment.metadata?.partnerName ||
+                             reportData.partner2Assessment.metadata?.partner2Name || 'Partner 2';
+              const sortedQuestions = getSortedQuestions();
+              const { sections, totalAnswered, alignmentPct } = computeAlignmentData();
+              return (
+                <>
+                  {renderCoverPage(p1Name, p2Name)}
+                  {renderIntroPage(p1Name, p2Name, alignmentPct, totalAnswered)}
+                  {renderContentsPage(sections)}
+                  {sortedQuestions.map((q, i) =>
+                    renderQuestionPage(q, i, sortedQuestions.length, p1Name, p2Name)
+                  )}
+                </>
+              );
+            })() : (
               <>
-                {/* View Controls */}
-                <Card className="border-0 shadow-lg bg-white print:hidden">
-                  <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <CardTitle className="font-sacred-bold text-[#2F4F3F]">
-                          Response Comparison
-                        </CardTitle>
-                        <CardDescription className="font-sacred text-[#6B5B73]">
-                          See how both partners answered the same questions
-                          {viewMode === 'card' && (
-                            <span className="block text-xs text-[#6B5B73] mt-1 opacity-75">
-                              💡 Use arrow keys or buttons to navigate between questions
-                            </span>
-                          )}
-                        </CardDescription>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        {/* View Toggle */}
-                        <div className="flex items-center border rounded-lg p-1 bg-gray-50">
-                          <Button
-                            variant={viewMode === 'list' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setViewMode('list')}
-                            className="h-8 px-3"
-                          >
-                            <List className="w-4 h-4 mr-1" />
-                            List
-                          </Button>
-                          <Button
-                            variant={viewMode === 'card' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => {
-                              setViewMode('card');
-                              setCurrentCardIndex(0);
-                            }}
-                            className="h-8 px-3"
-                          >
-                            <Grid3X3 className="w-4 h-4 mr-1" />
-                            Card
-                          </Button>
-                        </div>
-                        
-                        {/* Sort Options */}
-                        <div className="flex items-center gap-2">
-                          <Filter className="w-4 h-4 text-[#6B5B73]" />
-                          <Select value={sortBy} onValueChange={(value) => {
-                            setSortBy(value);
-                            setCurrentCardIndex(0); // Reset to first card when sorting changes
-                          }}>
-                            <SelectTrigger className="w-40 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="order">Question Order</SelectItem>
-                              <SelectItem value="alignment">Aligned First</SelectItem>
-                              <SelectItem value="misalignment">Discuss First</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-
-                {/* Render Questions Based on View Mode */}
-                {(() => {
-                  const sortedQuestions = getSortedQuestions();
-                  
-                  if (viewMode === 'card') {
-                    // Card view - show one question at a time
-                    if (sortedQuestions.length === 0) {
-                      return (
-                        <Card className="border-0 shadow-lg bg-white">
-                          <CardContent className="p-12 text-center">
-                            <p className="text-[#6B5B73] font-sacred">No questions to display</p>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
-                    
-                    return renderQuestionCard(sortedQuestions[currentCardIndex], currentCardIndex, sortedQuestions.length);
-                  } else {
-                    // List view - show all questions
-                    return (
-                      <Card className="border-0 shadow-lg bg-white">
-                        <CardContent className="p-6">
-                          {sortedQuestions.length === 0 ? (
-                            <div className="text-center py-8">
-                              <p className="text-[#6B5B73] font-sacred">No questions to display</p>
-                            </div>
-                          ) : (
-                            renderQuestionsList(sortedQuestions)
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  }
-                })()}
+                {renderOverallSummary()}
+                {Object.entries(reportData.sectionData).map(([sectionId, data]) =>
+                  renderSectionSummary(sectionId, data)
+                )}
               </>
-            ) : (
-              // Single assessment view
-              Object.entries(reportData.sectionData).map(([sectionId, data]) =>
-                renderSectionSummary(sectionId, data)
-              )
             )}
           </div>
         </div>
