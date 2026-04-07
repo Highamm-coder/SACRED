@@ -89,11 +89,7 @@ export default function ReportPage() {
   const [sortBy, setSortBy] = useState('order'); // 'alignment', 'order', 'misalignment'
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
-  const handlePrint = () => {
-    // Ensure list view is active so all questions appear in print
-    setViewMode('list');
-    setTimeout(() => window.print(), 150);
-  };
+  const handlePrint = () => window.print();
 
   const urlParams = new URLSearchParams(location.search);
   const assessmentId = urlParams.get('id');
@@ -970,6 +966,163 @@ export default function ReportPage() {
     );
   };
 
+  // ─── Online / screen report layout (not pages) ────────────────────────────
+
+  const renderScreenReport = (p1Name, p2Name, sortedQuestions, sections, alignmentPct) => {
+    const alignedCount = sortedQuestions.filter(q => q.isAligned).length;
+    return (
+      <div className="space-y-8">
+        {/* Hero banner */}
+        <div className="bg-gradient-to-br from-[#2F4F3F] to-[#1e3b2e] rounded-2xl p-10 text-white">
+          <p className="font-sacred text-[#7A9B8A] text-xs tracking-widest uppercase mb-3">Sacred Pre-Marriage Report</p>
+          <h1 className="text-4xl font-sacred-bold text-white mb-2">{p1Name} &amp; {p2Name}</h1>
+          <p className="font-sacred text-white/50 mb-8">
+            {reportData.completionDate?.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="text-3xl font-sacred-bold text-[#C4756B]">{alignmentPct}%</div>
+              <div className="text-xs font-sacred text-white/60 mt-1">Overall Alignment</div>
+            </div>
+            <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="text-3xl font-sacred-bold text-white">{sortedQuestions.length}</div>
+              <div className="text-xs font-sacred text-white/60 mt-1">Questions</div>
+            </div>
+            <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="text-3xl font-sacred-bold text-[#7A9B8A]">{alignedCount}</div>
+              <div className="text-xs font-sacred text-white/60 mt-1">Aligned</div>
+            </div>
+          </div>
+        </div>
+
+        {/* About */}
+        <div className="bg-white rounded-2xl shadow-md p-8">
+          <h2 className="text-2xl font-sacred-bold text-[#2F4F3F] mb-4">About This Report</h2>
+          <div className="space-y-3 mb-6">
+            <p className="font-sacred text-[#6B5B73] leading-relaxed">
+              This report shows how you each answered the Sacred Pre-Marriage Assessment. Read it together — each question shows both your answers alongside a conversation guide and helpful context.
+            </p>
+            <p className="font-sacred text-[#6B5B73] leading-relaxed">
+              Differences are not failures. They are the material of good marriage conversations.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {['Set aside dedicated time — an evening or quiet afternoon',
+              'Read each question together, not alone in advance',
+              'Focus on understanding each other, not on who is right'].map((tip, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="font-sacred-bold text-[#C4756B] w-5 flex-shrink-0">{i + 1}.</span>
+                <p className="font-sacred text-[#6B5B73] text-sm">{tip}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Sections overview */}
+        <div>
+          <h2 className="text-lg font-sacred-bold text-[#2F4F3F] mb-4">Sections Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Object.entries(sections).map(([sectionId, data]) => {
+              const pct = data.total > 0 ? Math.round((data.aligned / data.total) * 100) : 0;
+              const barColor = pct >= 75 ? '#7A9B8A' : pct >= 50 ? '#B8956A' : '#C4756B';
+              return (
+                <div key={sectionId} className="p-4 bg-white rounded-xl shadow-sm border border-[#E6D7C9]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-sacred-bold text-[#2F4F3F] text-sm">{getSectionLabel(sectionId)}</span>
+                    <span className="text-lg font-sacred-bold" style={{ color: barColor }}>{pct}%</span>
+                  </div>
+                  <div className="w-full bg-[#E6D7C9] rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                  </div>
+                  <p className="text-xs font-sacred text-[#6B5B73]/60 mt-1">{data.aligned} of {data.total} aligned</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-px bg-[#E6D7C9]" />
+          <span className="font-sacred text-[#6B5B73]/50 text-sm">{sortedQuestions.length} questions</span>
+          <div className="flex-1 h-px bg-[#E6D7C9]" />
+        </div>
+
+        {/* Questions */}
+        <div className="space-y-6">
+          {sortedQuestions.map((questionData, index) => {
+            const isAligned = questionData.isAligned;
+            return (
+              <div key={questionData.question_id} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                <div className={`px-8 py-4 flex items-center justify-between border-b border-[#E6D7C9] ${isAligned ? 'bg-[#7A9B8A]/8' : 'bg-[#F5F1EB]'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-sacred text-[#6B5B73] uppercase tracking-widest">{getSectionLabel(questionData.section)}</span>
+                    <span className="text-[#E6D7C9]">·</span>
+                    <span className="text-xs font-sacred text-[#6B5B73]">{index + 1} / {sortedQuestions.length}</span>
+                  </div>
+                  {isAligned ? (
+                    <span className="text-xs font-sacred text-[#7A9B8A] flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5" /> Aligned
+                    </span>
+                  ) : (
+                    <span className="text-xs font-sacred text-[#C4756B]">Discussion Needed</span>
+                  )}
+                </div>
+
+                <div className="p-8">
+                  <h3 className="text-2xl font-sacred-bold text-[#2F4F3F] leading-tight mb-8">
+                    {getQuestionText(questionData)}
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div className="p-5 bg-[#F5F1EB] rounded-xl border-l-4 border-[#C4756B]">
+                      <p className="text-xs font-sacred text-[#C4756B] uppercase tracking-widest mb-3">{p1Name}</p>
+                      <p className="font-sacred text-[#2F4F3F] leading-relaxed">{getResponseText(questionData.partner1Response)}</p>
+                    </div>
+                    <div className="p-5 bg-[#F5F1EB] rounded-xl border-l-4 border-[#7A9B8A]">
+                      <p className="text-xs font-sacred text-[#7A9B8A] uppercase tracking-widest mb-3">{p2Name}</p>
+                      <p className="font-sacred text-[#2F4F3F] leading-relaxed">{getResponseText(questionData.partner2Response)}</p>
+                    </div>
+                  </div>
+
+                  {isAligned && (
+                    <div className="mb-6 p-4 bg-[#7A9B8A]/10 rounded-lg">
+                      <p className="text-sm font-sacred text-[#7A9B8A]">You gave the same answer — genuine common ground.</p>
+                    </div>
+                  )}
+
+                  {(questionData.conversation_guide || (!isAligned && questionData.discussion_question) || questionData.helpful_facts) && (
+                    <div className="space-y-5 pt-6 border-t border-[#E6D7C9]">
+                      {questionData.conversation_guide && (
+                        <div>
+                          <h4 className="text-xs font-sacred text-[#C4756B] uppercase tracking-widest mb-2">Conversation Guide</h4>
+                          <p className="font-sacred text-[#6B5B73] leading-relaxed">{questionData.conversation_guide}</p>
+                        </div>
+                      )}
+                      {!isAligned && questionData.discussion_question && (
+                        <div>
+                          <h4 className="text-xs font-sacred text-[#6B5B73] uppercase tracking-widest mb-2">Starter Question</h4>
+                          <p className="font-sacred text-[#6B5B73] italic leading-relaxed border-l-2 border-[#E6D7C9] pl-4">
+                            &ldquo;{getDiscussionText(questionData)}&rdquo;
+                          </p>
+                        </div>
+                      )}
+                      {questionData.helpful_facts && (
+                        <div className="p-5 bg-[#2F4F3F]/5 rounded-xl">
+                          <h4 className="text-xs font-sacred text-[#2F4F3F] uppercase tracking-widest mb-2">Good to Know</h4>
+                          <p className="font-sacred text-[#2F4F3F]/80 text-sm leading-relaxed">{questionData.helpful_facts}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Render questions list
   const renderQuestionsList = (sortedQuestions) => {
     const partner1Name = reportData.partner1Assessment.metadata?.partnerName || 
@@ -1138,16 +1291,13 @@ export default function ReportPage() {
     <AuthWrapper requireAuth={true}>
       <style>{`
         @media print {
-          @page { margin: 0; size: letter; }
-          body { background: white !important; }
-          .print\\:hidden { display: none !important; }
+          @page { margin: 0; size: letter portrait; }
+          body { background: white !important; margin: 0; padding: 0; }
           nav, aside, footer, [data-sidebar] { display: none !important; }
-          .min-h-screen { min-height: unset !important; }
-          .bg-gradient-to-br { background: white !important; }
-          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .shadow-lg, .shadow-xl, .shadow-md { box-shadow: none !important; }
-          .break-after-page { break-after: page; page-break-after: always; }
-          .space-y-4 > * + * { margin-top: 0 !important; }
+          .min-h-screen { min-height: unset !important; background: none !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .break-after-page { break-after: page !important; page-break-after: always !important; }
+          .print-space > * + * { margin-top: 0 !important; }
         }
       `}</style>
       <div className="min-h-screen bg-gradient-to-br from-[#F5F1EB] to-[#EAE6E1] py-8 px-4">
@@ -1179,34 +1329,40 @@ export default function ReportPage() {
             </div>
           </div>
 
-          {/* Report document */}
-          <div className="space-y-4 max-w-[816px] mx-auto">
-            {reportData.isAlignmentReport ? (() => {
-              const p1Name = reportData.partner1Assessment.metadata?.partnerName ||
-                             reportData.partner1Assessment.metadata?.partner1Name || 'Partner 1';
-              const p2Name = reportData.partner2Assessment.metadata?.partnerName ||
-                             reportData.partner2Assessment.metadata?.partner2Name || 'Partner 2';
-              const sortedQuestions = getSortedQuestions();
-              const { sections, totalAnswered, alignmentPct } = computeAlignmentData();
-              return (
-                <>
+          {/* Report */}
+          {reportData.isAlignmentReport ? (() => {
+            const p1Name = reportData.partner1Assessment.metadata?.partnerName ||
+                           reportData.partner1Assessment.metadata?.partner1Name || 'Partner 1';
+            const p2Name = reportData.partner2Assessment.metadata?.partnerName ||
+                           reportData.partner2Assessment.metadata?.partner2Name || 'Partner 2';
+            const sortedQuestions = getSortedQuestions();
+            const { sections, totalAnswered, alignmentPct } = computeAlignmentData();
+            return (
+              <>
+                {/* Online reading view — hidden when printing */}
+                <div className="max-w-[816px] mx-auto print:hidden">
+                  {renderScreenReport(p1Name, p2Name, sortedQuestions, sections, alignmentPct)}
+                </div>
+
+                {/* Print / PDF layout — hidden on screen, shown only when printing */}
+                <div className="hidden print:block print-space max-w-[816px] mx-auto">
                   {renderCoverPage(p1Name, p2Name)}
                   {renderIntroPage(p1Name, p2Name, alignmentPct, totalAnswered)}
                   {renderContentsPage(sections)}
                   {sortedQuestions.map((q, i) =>
                     renderQuestionPage(q, i, sortedQuestions.length, p1Name, p2Name)
                   )}
-                </>
-              );
-            })() : (
-              <>
-                {renderOverallSummary()}
-                {Object.entries(reportData.sectionData).map(([sectionId, data]) =>
-                  renderSectionSummary(sectionId, data)
-                )}
+                </div>
               </>
-            )}
-          </div>
+            );
+          })() : (
+            <div className="space-y-6 max-w-[816px] mx-auto">
+              {renderOverallSummary()}
+              {Object.entries(reportData.sectionData).map(([sectionId, data]) =>
+                renderSectionSummary(sectionId, data)
+              )}
+            </div>
+          )}
         </div>
       </div>
     </AuthWrapper>
