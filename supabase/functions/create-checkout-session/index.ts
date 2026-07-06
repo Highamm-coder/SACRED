@@ -86,24 +86,24 @@ serve(async (req) => {
       )
     }
 
+    // Parse request body
+    const { appUrl } = await req.json()
+    const baseUrl = appUrl || 'https://www.sacredonline.co'
+
     // Check if user already has paid
     if (profile.has_paid) {
       console.log(`User ${user.id} already has paid status, blocking duplicate purchase`)
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'User has already purchased access',
           redirect_url: `${baseUrl}/Dashboard`
         }),
-        { 
+        {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
-
-    // Parse request body
-    const { appUrl } = await req.json()
-    const baseUrl = appUrl || 'https://www.sacredonline.co'
 
     console.log(`Creating checkout session for user ${user.id} (${user.email})`)
 

@@ -48,7 +48,9 @@ export default function Layout({ children, currentPageName }) {
 
       // ENTERPRISE FIX: Payment validation now uses refreshed user data
       const excludedPages = ['Landing', 'PaymentRequired', 'Terms', 'Privacy', 'Admin', 'Education', 'Shop', 'Blog', 'PartnerInvite', 'Login', 'Signup', 'ResourcePage', 'AuthCallback'];
-      if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName)) {
+      const publicPathPrefixes = ['/blog', '/guides'];
+      const isPublicPath = publicPathPrefixes.some(p => window.location.pathname.toLowerCase().startsWith(p));
+      if (currentUser && !currentUser.has_paid && !excludedPages.includes(currentPageName) && !isPublicPath) {
         // Allow admin users to bypass payment requirement
         if (currentUser.role === 'admin') {
           return; // Don't redirect admins to payment page
@@ -156,6 +158,7 @@ export default function Layout({ children, currentPageName }) {
   const fullscreenPages = ['Landing', 'Login', 'Signup', 'ResourcePage', 'AuthCallback'];
   const isFullscreen = fullscreenPages.includes(currentPageName) ||
     window.location.pathname.startsWith('/blog') ||
+    window.location.pathname.startsWith('/guides') ||
     window.location.pathname.startsWith('/auth/');
 
   return (
