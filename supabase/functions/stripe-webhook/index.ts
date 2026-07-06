@@ -47,7 +47,7 @@ serve(async (req) => {
     // Verify the webhook signature
     let event: Stripe.Event
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
     } catch (err) {
       console.error('Webhook signature verification failed:', err.message)
       return new Response(`Webhook Error: ${err.message}`, { status: 400 })
@@ -126,9 +126,46 @@ serve(async (req) => {
           session_id: session.id
         })
 
-        // TODO: Send confirmation email to user
-        // TODO: Log the successful payment for analytics
-        // TODO: Send webhook to other systems if needed
+        // Send confirmation email (non-blocking: a failed email must not fail the webhook)
+        const resendApiKey = Deno.env.get('RESEND_API_KEY')
+        if (resendApiKey && userEmail) {
+          try {
+            const firstName = (existingUser.full_name || '').split(' ')[0] || 'there'
+            const emailRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'SACRED <noreply@sacredonline.co>',
+                to: [userEmail],
+                subject: 'Welcome to SACRED — your access is ready',
+                html: `
+                  <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #2F4F3F;">
+                    <h1 style="font-weight: 500;">Payment confirmed</h1>
+                    <p>Hi ${firstName},</p>
+                    <p>Thank you for your purchase. Your SACRED assessment access is now active — lifetime access for you and your partner.</p>
+                    <p><strong>Order summary</strong><br/>SACRED Relationship Assessment — $47.00 USD</p>
+                    <p style="margin: 32px 0;">
+                      <a href="https://www.sacredonline.co/Dashboard" style="background: #2F4F3F; color: #F5F1EB; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Begin your assessment</a>
+                    </p>
+                    <p>If you have any questions, just reply to this email.</p>
+                    <p>— The SACRED Team</p>
+                  </div>`,
+              }),
+            })
+            if (!emailRes.ok) {
+              console.error('Confirmation email failed:', emailRes.status, await emailRes.text())
+            } else {
+              console.log(`Confirmation email sent to ${userEmail}`)
+            }
+          } catch (emailError) {
+            console.error('Confirmation email error:', emailError)
+          }
+        } else if (!resendApiKey) {
+          console.warn('RESEND_API_KEY not set - skipping confirmation email')
+        }
 
         break
       }

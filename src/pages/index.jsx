@@ -58,6 +58,8 @@ import BlogEditor from "./BlogEditor";
 
 import ResourceEditor from "./ResourceEditor";
 
+import LeadMagnetPage, { GuidesIndex } from "./LeadMagnet";
+
 // Blog routes — SSR-rendered on Vercel for bots/direct loads, React Router for in-app navigation
 // ResourcePage handles /blog/:slug via useParams()
 
@@ -209,6 +211,9 @@ function PagesContent() {
                 <Route path="/ResourcePage" element={<ResourcePage />} />
                 <Route path="/blog/:slug" element={<ResourcePage />} />
                 <Route path="/blog" element={<Education />} />
+
+                <Route path="/guides" element={<GuidesIndex />} />
+                <Route path="/guides/:slug" element={<LeadMagnetPage />} />
                 
                 <Route path="/BlogEditor" element={<BlogEditor />} />
                 

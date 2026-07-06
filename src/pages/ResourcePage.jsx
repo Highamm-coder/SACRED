@@ -6,6 +6,36 @@ import { Link, useParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 const SITE_URL = 'https://www.sacredonline.co';
+
+// Post cluster tag -> matching free guide (see src/pages/LeadMagnet.jsx)
+const CLUSTER_TO_MAGNET = {
+  'wedding-night': { slug: 'wedding-night-guide', title: 'Your Wedding Night: A Step-by-Step Guide' },
+  'purity-culture': { slug: 'purity-culture-devotional', title: 'Healing from Purity Culture: A 7-Day Devotional' },
+  'sex-education': { slug: 'conversation-planner', title: 'Pre-Marriage Intimacy Conversation Planner' },
+  'whats-allowed': { slug: 'scripture-guide', title: 'Scripture Guide: What Does the Bible Actually Say?' },
+  'communication': { slug: 'conversation-cards', title: 'Sacred Conversation Cards: 30 Questions' },
+  'authority': { slug: 'counselor-guide', title: 'Guide to Choosing a Pre-Marriage Counselor' },
+};
+const DEFAULT_MAGNET = { slug: 'wedding-night-guide', title: 'Your Wedding Night: A Step-by-Step Guide' };
+
+function LeadMagnetCTA({ tags }) {
+  const magnet = (tags || []).map(t => CLUSTER_TO_MAGNET[t]).find(Boolean) || DEFAULT_MAGNET;
+  return (
+    <div className="mt-14 bg-white rounded-2xl border border-[#E6D7C9] p-8 text-center">
+      <p className="font-sacred-bold text-[#C4756B] text-xs tracking-[0.25em] uppercase mb-3">Free Resource</p>
+      <h3 className="font-sacred-medium text-2xl text-[#2F4F3F] mb-2">{magnet.title}</h3>
+      <p className="font-sacred text-[#6B5B73] mb-6 max-w-md mx-auto">
+        We made a free guide for exactly this conversation. Get it sent straight to your inbox.
+      </p>
+      <Link
+        to={`/guides/${magnet.slug}`}
+        className="inline-flex items-center px-8 py-3 bg-[#2F4F3F] hover:bg-[#243D30] text-[#F5F1EB] rounded-full font-sacred-bold transition-colors"
+      >
+        Get the free guide
+      </Link>
+    </div>
+  );
+}
 const DEFAULT_OG_IMAGE = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg';
 
 // Replace any h1 tags in rich-text content with h2 — the post title is the only H1
@@ -226,6 +256,9 @@ export default function ResourcePage() {
               </a>
             </div>
           )}
+
+          {/* Lead magnet CTA — matched to the post's topic cluster */}
+          <LeadMagnetCTA tags={resource.tags} />
 
           <div className="mt-16 pt-8 border-t border-[#E6D7C9]">
             <Link to="/blog" className="inline-flex items-center gap-2 text-[#C4756B] font-sacred-bold hover:underline">

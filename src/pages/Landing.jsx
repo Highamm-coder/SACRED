@@ -148,6 +148,12 @@ export default function LandingPage() {
           <div className="nav-logo text-3xl font-sacred tracking-widest transition-colors duration-300">SACRED</div>
           <div className="flex items-center gap-6">
             <a
+              href="/guides"
+              className="nav-link font-sacred text-base transition-colors duration-300"
+            >
+              Free Guides
+            </a>
+            <a
               href="/blog"
               className="nav-link font-sacred text-base transition-colors duration-300"
             >

@@ -25,8 +25,14 @@ export default function HomePage() {
         }
       } catch (e) {
         console.error('Auth check error:', e);
-        // User not logged in or auth error, show landing page
-        window.location.href = '/';
+        // User not logged in or auth error, show landing page.
+        // In production '/' is the static landing (served by /api/landing);
+        // in dev '/' is this SPA route, so redirecting there would loop forever.
+        if (import.meta.env.DEV) {
+          navigate(createPageUrl('Landing'));
+        } else {
+          window.location.href = '/';
+        }
       }
     };
 
