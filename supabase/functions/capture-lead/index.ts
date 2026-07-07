@@ -90,12 +90,12 @@ serve(async (req) => {
           body: JSON.stringify({
             from: 'SACRED <noreply@sacredonline.co>',
             to: [cleanEmail],
-            subject: `Your free guide: ${magnet.title}`,
+            subject: 'Your SACRED download is ready',
             html: `
               <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #2F4F3F;">
-                <h1 style="font-weight: 500;">Here's your guide</h1>
+                <h1 style="font-weight: 500;">Your download is ready</h1>
                 <p>Hi ${firstName},</p>
-                <p>Thanks for requesting <strong>${magnet.title}</strong>. Your download is ready:</p>
+                <p>Thanks for requesting a resource from SACRED. Your download is ready:</p>
                 <p style="margin: 32px 0;">
                   <a href="${signed.signedUrl}" style="background: #2F4F3F; color: #F5F1EB; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Download the guide</a>
                 </p>
