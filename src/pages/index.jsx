@@ -12,7 +12,6 @@ import Report from "./Report";
 
 import Dashboard from "./Dashboard";
 
-import Landing from "./Landing";
 
 import Terms from "./Terms";
 
@@ -80,9 +79,7 @@ const PAGES = {
     Report: Report,
     
     Dashboard: Dashboard,
-    
-    Landing: Landing,
-    
+
     Terms: Terms,
     
     Privacy: Privacy,
@@ -168,7 +165,6 @@ function PagesContent() {
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
-                <Route path="/Landing" element={<Landing />} />
                 
                 <Route path="/Terms" element={<Terms />} />
                 

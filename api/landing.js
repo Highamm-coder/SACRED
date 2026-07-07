@@ -4,6 +4,7 @@ const THIS_IS_FOR_YOU_IMG = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1
 const SIGNUP_URL = `${SITE_URL}/signup`;
 const LOGIN_URL = `${SITE_URL}/login`;
 const BLOG_URL = `${SITE_URL}/blog`;
+const GUIDES_URL = `${SITE_URL}/guides`;
 
 const faqs = [
   {
@@ -375,6 +376,7 @@ export default function handler(req, res) {
   <nav id="main-nav">
     <a href="${SITE_URL}" class="logo">SACRED</a>
     <div class="nav-links">
+      <a href="${GUIDES_URL}" class="nav-link">Free Guides</a>
       <a href="${BLOG_URL}" class="nav-link">Blog</a>
       <a href="${LOGIN_URL}" class="nav-link">Sign in</a>
       <a href="${SIGNUP_URL}" class="nav-cta">Begin Assessment</a>

@@ -10,7 +10,7 @@ export default function AuthError({ error, onRetry }) {
   };
 
   const handleGoHome = () => {
-    window.location.href = createPageUrl('Landing');
+    window.location.href = '/';
   };
 
   return (

@@ -102,7 +102,7 @@ function GuideNav() {
   return (
     <header className="py-4 px-6 md:px-10 bg-[#F5F1EB]/95 backdrop-blur border-b border-[#E6D7C9] sticky top-0 z-20">
       <nav className="flex justify-between items-center max-w-6xl mx-auto">
-        <Link to="/Landing" className="text-2xl font-sacred tracking-widest text-[#2F4F3F]">SACRED</Link>
+        <a href="/" className="text-2xl font-sacred tracking-widest text-[#2F4F3F]">SACRED</a>
         <div className="flex items-center gap-6">
           <Link to="/guides" className="font-sacred text-base text-[#2F4F3F]/75 hover:text-[#C4756B]">Free Guides</Link>
           <a href="/blog" className="font-sacred text-base text-[#2F4F3F]/75 hover:text-[#C4756B]">Blog</a>

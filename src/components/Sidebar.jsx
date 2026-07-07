@@ -210,11 +210,11 @@ export default function Sidebar({ user, isLoading, mobileMenuOpen, setMobileMenu
             e.stopPropagation();
             try {
               await User.signOut();
-              window.location.href = createPageUrl('Landing');
+              window.location.href = '/';
             } catch (error) {
               console.error('Error during logout:', error);
               // Still try to redirect even if logout fails
-              window.location.href = createPageUrl('Landing');
+              window.location.href = '/';
             }
           }}
           className="w-full flex items-center gap-3 px-3 py-3 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg font-sacred transition-colors touch-manipulation group"
