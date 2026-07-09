@@ -161,7 +161,8 @@ export default async function handler(req, res) {
   <nav>
     <a href="${SITE_URL}" class="logo">SACRED</a>
     <div class="nav-links">
-      <a href="${SITE_URL}/blog">Education</a>
+      <a href="${SITE_URL}/guides">Free Guides</a>
+      <a href="${SITE_URL}/blog">Blog</a>
       <a href="${SITE_URL}/login">Sign in</a>
       <a href="${SITE_URL}/signup" class="cta">Begin Assessment</a>
     </div>

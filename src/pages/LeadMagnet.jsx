@@ -106,6 +106,7 @@ function GuideNav() {
         <div className="flex items-center gap-6">
           <Link to="/guides" className="font-sacred text-base text-[#2F4F3F]/75 hover:text-[#C4756B]">Free Guides</Link>
           <a href="/blog" className="font-sacred text-base text-[#2F4F3F]/75 hover:text-[#C4756B]">Blog</a>
+          <a href="/login" className="font-sacred text-base text-[#2F4F3F]/75 hover:text-[#C4756B]">Sign in</a>
           <Link
             to="/Signup"
             className="bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full px-5 py-2 text-sm transition-colors"

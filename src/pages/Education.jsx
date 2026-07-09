@@ -216,6 +216,9 @@ export default function EducationPage() {
             SACRED
           </a>
           <div className="flex items-center gap-6">
+            <Link to="/guides" className="nav-link font-sacred text-base transition-colors duration-300">
+              Free Guides
+            </Link>
             <Link to="/blog" className="nav-link font-sacred text-base transition-colors duration-300">
               Blog
             </Link>

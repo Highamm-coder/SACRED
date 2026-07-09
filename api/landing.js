@@ -662,6 +662,7 @@ export default function handler(req, res) {
       &copy; 2025 SACRED &nbsp;&middot;&nbsp;
       <a href="${SITE_URL}/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
       <a href="${SITE_URL}/terms">Terms of Service</a> &nbsp;&middot;&nbsp;
+      <a href="${GUIDES_URL}">Free Guides</a> &nbsp;&middot;&nbsp;
       <a href="${BLOG_URL}">Blog</a>
     </p>
   </footer>

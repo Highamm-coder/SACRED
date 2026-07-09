@@ -26,6 +26,7 @@ export default async function handler(req, res) {
   const staticPages = [
     { url: '/', priority: '1.0', changefreq: 'weekly' },
     { url: '/blog', priority: '0.9', changefreq: 'daily' },
+    { url: '/guides', priority: '0.8', changefreq: 'weekly' },
   ];
 
   const staticUrls = staticPages.map(p => `
