@@ -44,8 +44,7 @@ import PaymentSuccess from "./PaymentSuccess";
 
 import Shop from "./Shop";
 
-import Login from "./Login";
-import Signup from "./Signup";
+import Auth from "./Auth";
 
 import EmailTest from "./EmailTest";
 
@@ -110,10 +109,10 @@ const PAGES = {
     
     Shop: Shop,
     
-    Login: Login,
+    Login: Auth,
 
-    Signup: Signup,
-    
+    Signup: Auth,
+
     EmailTest: EmailTest,
     
     AdminCMS: AdminCMS,
@@ -194,9 +193,9 @@ function PagesContent() {
                 
                 <Route path="/Shop" element={<Shop />} />
                 
-                <Route path="/Login" element={<Login />} />
+                <Route path="/Login" element={<Auth />} />
 
-                <Route path="/Signup" element={<Signup />} />
+                <Route path="/Signup" element={<Auth />} />
 
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 

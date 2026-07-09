@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { User } from '@/api/entities';
 import { Eye, EyeOff, ArrowRight, Mail, CheckCircle, Check } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const IMG_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/cbf682a54_priscilla-du-preez-Wxhsx3X10OA-unsplash.jpg";
 
@@ -18,47 +18,70 @@ const included = [
   '30-day money-back guarantee',
 ];
 
-export default function SignupPage() {
+// Single two-column auth screen serving both /login and /signup.
+// The initial mode is derived from the path; a toggle switches between them
+// without leaving the page.
+export default function AuthPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const startsInLogin = location.pathname.toLowerCase().includes('login');
+  const [isLogin, setIsLogin] = useState(startsInLogin);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [verificationSent, setVerificationSent] = useState(false);
-  const navigate = useNavigate();
+
+  // Optional post-auth destination (e.g. ?redirect=/PaymentRequired)
+  const redirectTo = new URLSearchParams(location.search).get('redirect');
+  const destinationAfterAuth = (paidFallback) =>
+    redirectTo ? decodeURIComponent(redirectTo) : createPageUrl(paidFallback);
 
   useEffect(() => {
+    // If already signed in, don't show the form — send them onward.
     const checkAuth = async () => {
       try {
         const user = await User.me();
-        if (user.has_paid) {
-          navigate(createPageUrl('Dashboard'));
+        if (redirectTo) {
+          navigate(decodeURIComponent(redirectTo));
         } else {
-          navigate(createPageUrl('PaymentRequired'));
+          navigate(createPageUrl(user.has_paid ? 'Dashboard' : 'PaymentRequired'));
         }
       } catch {
-        // Not logged in — stay here
+        // Not logged in — stay on this page.
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
-  const handleSignup = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const result = await User.signUp(email, password);
-      if (result.needsVerification) {
-        setVerificationSent(true);
+      if (isLogin) {
+        await User.signIn(email, password);
+        navigate(destinationAfterAuth('Dashboard'));
       } else {
-        navigate(createPageUrl('PaymentRequired'));
+        const result = await User.signUp(email, password);
+        if (result.needsVerification) {
+          setVerificationSent(true);
+        } else {
+          navigate(destinationAfterAuth('PaymentRequired'));
+        }
       }
     } catch (err) {
-      setError(err.message || 'Could not create account. Please try again.');
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsLogin((v) => !v);
+    setError('');
   };
 
   return (
@@ -85,7 +108,7 @@ export default function SignupPage() {
               Check your email
             </h1>
             <p className="text-[#6B5B73] font-sacred leading-relaxed mb-6">
-              We've sent a verification link to <strong className="font-sacred-bold">{email}</strong>. Click the link to confirm your account, then come back to complete your payment.
+              We've sent a verification link to <strong className="font-sacred-bold">{email}</strong>. Click the link to confirm your account, then come back to sign in.
             </p>
             <ol className="space-y-2 mb-8">
               {['Check your inbox (and spam folder)', 'Click the verification link', 'Return here to continue'].map((step, i) => (
@@ -96,7 +119,7 @@ export default function SignupPage() {
               ))}
             </ol>
             <Button
-              onClick={() => navigate(createPageUrl('Login') + '?redirect=' + encodeURIComponent(createPageUrl('PaymentRequired')))}
+              onClick={() => { setVerificationSent(false); setIsLogin(true); setPassword(''); }}
               className="w-full bg-[#C4756B] hover:bg-[#B86761] text-white font-sacred-bold rounded-full py-6"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
@@ -106,13 +129,13 @@ export default function SignupPage() {
         ) : (
           <div className="max-w-sm">
             <h1 className="text-3xl md:text-4xl font-sacred-medium text-[#2F4F3F] leading-[1.1] mb-2">
-              Begin your journey
+              {isLogin ? 'Welcome back' : 'Begin your journey'}
             </h1>
             <p className="text-[#6B5B73] font-sacred mb-8">
-              Create your account — payment comes next.
+              {isLogin ? 'Sign in to continue your journey.' : 'Create your account — payment comes next.'}
             </p>
 
-            <form onSubmit={handleSignup} className="space-y-5">
+            <form onSubmit={handleAuth} className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-[#2F4F3F] font-sacred-bold text-sm">Email address</Label>
                 <Input
@@ -137,8 +160,8 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Min. 6 characters"
-                    autoComplete="new-password"
+                    placeholder={isLogin ? 'Enter your password' : 'Min. 6 characters'}
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
                     className="border-[#E6D7C9] focus:border-[#2F4F3F] font-sacred bg-white h-11 pr-10"
                   />
                   <button
@@ -162,6 +185,8 @@ export default function SignupPage() {
               >
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : isLogin ? (
+                  <>Sign in <ArrowRight className="w-4 h-4 ml-2" /></>
                 ) : (
                   <>Create account &amp; continue <ArrowRight className="w-4 h-4 ml-2" /></>
                 )}
@@ -169,8 +194,10 @@ export default function SignupPage() {
             </form>
 
             <p className="text-xs text-[#6B5B73] font-sacred mt-6 leading-relaxed">
-              Already have an account?{' '}
-              <Link to={createPageUrl('Login')} className="text-[#C4756B] hover:underline">Sign in</Link>
+              {isLogin ? "New to SACRED? " : 'Already have an account? '}
+              <button type="button" onClick={toggleMode} className="text-[#C4756B] hover:underline">
+                {isLogin ? 'Create an account' : 'Sign in'}
+              </button>
               {' · '}
               By continuing you agree to our{' '}
               <Link to={createPageUrl('Terms')} className="text-[#C4756B] hover:underline">Terms</Link>
@@ -183,7 +210,6 @@ export default function SignupPage() {
 
       {/* ── Right — details ── */}
       <div className="flex-1 relative flex flex-col justify-end overflow-hidden min-h-[50vh] md:min-h-0">
-        {/* Photo */}
         <img
           src={IMG_URL}
           alt="Couple"
@@ -191,7 +217,6 @@ export default function SignupPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
 
-        {/* Content over photo */}
         <div className="relative z-10 p-8 md:p-12 lg:p-14">
           <p className="text-white/50 font-sacred-bold text-xs tracking-[0.2em] uppercase mb-4">What's included — $47 one-time</p>
           <ul className="space-y-3 mb-8">
@@ -207,7 +232,7 @@ export default function SignupPage() {
             <p className="text-white/70 font-sacred italic text-sm md:text-base leading-relaxed mb-2">
               "For the first time, we could talk about intimacy without it being awkward. We actually felt prepared."
             </p>
-            <cite className="text-white/40 font-sacred text-xs">— Sarah & David, married 1 year</cite>
+            <cite className="text-white/40 font-sacred text-xs">— Sarah &amp; David, married 1 year</cite>
           </blockquote>
         </div>
       </div>
